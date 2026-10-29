@@ -51,7 +51,7 @@
 </head>
 <body>
 <header>
-  <h1>Olho Cérebro <span class="small">v6</span></h1>
+  <h1>Olho Cérebro <span class="small">v7</span></h1>
   <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
   <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
   <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
@@ -90,13 +90,14 @@
     <label>pan <span id="vPan">90</span>°</label><input type="range" id="sPan" min="35" max="145" value="90">
     <label>tilt <span id="vTilt">90</span>°</label><input type="range" id="sTilt" min="55" max="125" value="90">
     <div class="row" style="margin-top:8px">
-      <button class="b" id="bAuto">Automático</button>
-      <button class="b" id="bRemote">Remoto (espelha a tela)</button>
+      <button class="b" id="bAuto">Sensor (Arduino)</button>
+      <button class="b" id="bRemote">Câmera / manual (celular)</button>
     </div>
     <div class="row" style="margin-top:8px">
       <button class="b" id="bCenter">Centro</button>
-      <button class="b" id="bReact">Reação ultrassom: on</button>
+      <button class="b" id="bWander">Vagar vivo: off</button>
     </div>
+    <div class="small" style="margin-top:8px">Parado é o padrão. Só uma fonte mexe o olho por vez: o sensor de distância (modo Arduino) ou a câmera e os sliders (modo celular).</div>
   </div>
 </section>
 
@@ -292,7 +293,8 @@ function stopHold(){ if(holdTimer){ clearInterval(holdTimer); holdTimer=null; } 
 $('#bRemote').onclick=()=>startHold(+$('#sPan').value,+$('#sTilt').value);
 $('#bCenter').onclick=()=>{ $('#sPan').value=C.panC; $('#sTilt').value=C.tiltC; $('#vPan').textContent=C.panC; $('#vTilt').textContent=C.tiltC; startHold(C.panC,C.tiltC); };
 $('#bAuto').onclick=()=>{ stopHold(); bleSend('A'); S.mode='automático'; drawEye(); };
-$('#bReact').onclick=()=>{ S.react=!S.react; bleSend(S.react?'R1':'R0'); $('#bReact').textContent='Reação ultrassom: '+(S.react?'on':'off'); };
+let wanderOn=false;
+$('#bWander').onclick=()=>{ wanderOn=!wanderOn; bleSend(wanderOn?'W1':'W0'); $('#bWander').textContent='Vagar vivo: '+(wanderOn?'on':'off'); $('#bWander').classList.toggle('p',wanderOn); };
 $('#sPan').oninput=e=>{ $('#vPan').textContent=e.target.value; startHold(+e.target.value,+$('#sTilt').value); };
 $('#sTilt').oninput=e=>{ $('#vTilt').textContent=e.target.value; startHold(+$('#sPan').value,+e.target.value); };
 

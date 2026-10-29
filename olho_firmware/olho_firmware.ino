@@ -1,12 +1,12 @@
 /*
-  OLHO — firmware do Arduino Uno (Halloween 2026) — v3
+  OLHO — firmware do Arduino Uno (Halloween 2026) — v4
   ------------------------------------------------
   Um olho gigante num pan-tilt de 2 servos, com dois sensores
   ultrassônicos HC-SR04 e um módulo Bluetooth BLE HM-10.
 
   Modos:
-    AUTO    : o olho vagueia sozinho (sacadas) e reage a quem chega perto
-              (ultrassom esquerdo/direito).
+    AUTO    : parado no centro; reage a quem chega perto (ultrassom esq/dir).
+              Com W1, vagueia sozinho em sacadas quando não tem ninguém.
     REMOTO  : um celular manda ângulos por BLE ("P120,T85"). Se ficar
               30 s sem receber nada, volta sozinho pro modo AUTO.
 
@@ -15,6 +15,7 @@
     C                -> centro
     A                -> força modo AUTO
     R0 / R1          -> reação ao ultrassom desligada / ligada
+    W0 / W1          -> vagar vivo desligado (padrão) / ligado
     Z                -> imprime status
   O Uno envia a cada 0,5 s (1 s em remoto):  D<esq_cm>,<dir_cm>,<modo>
   e eventos:                  E:perto  /  E:longe
@@ -62,6 +63,7 @@ SoftwareSerial ble(BLE_RX, BLE_TX);
 enum Mode { AUTO, REMOTE };
 Mode mode = AUTO;
 bool reactEnabled = true;
+bool wander = false;   // W1 liga o "vagar vivo"; padrão desligado: parado até algo acontecer
 
 // posição atual e alvo (em graus de servo já com centro aplicado)
 float curPan = 90, curTilt = 90;
@@ -168,7 +170,7 @@ void stareBehavior() {
   int panAim = PAN_CENTER + side * 28;     // 28 graus pro lado da pessoa
   int tiltAim = TILT_CENTER - 6;           // levemente pra cima: rosto fica acima da gaiola
 
-  if (!glancing && now > tStareUntil) {
+  if (wander && !glancing && now > tStareUntil) {
     // desvia o olhar por um instante, depois volta a encarar
     glancing = true;
     tGlanceUntil = now + GLANCE_MS;
@@ -206,6 +208,7 @@ void handleLine(char* line) {
     case 'C': case 'c': setTarget(PAN_CENTER, TILT_CENTER, 6.0); mode = REMOTE; lastRemote = millis(); break;
     case 'A': case 'a': mode = AUTO; tNextIdle = 0; break;
     case 'R': case 'r': reactEnabled = (line[1] != '0'); break;
+    case 'W': case 'w': wander = (line[1] != '0'); tNextIdle = 0; break;
     case 'Z': case 'z': reportStatus(); break;
     default: break;
   }
@@ -231,7 +234,7 @@ void setup() {
   curPan = tgtPan = PAN_CENTER; curTilt = tgtTilt = TILT_CENTER;
   panServo.write(PAN_CENTER); tiltServo.write(TILT_CENTER);
   delay(600);
-  Serial.println(F("OLHO pronto. Comandos: P<pan>,T<tilt>  C  A  R0/R1  Z"));
+  Serial.println(F("OLHO v4 pronto. Comandos: P<pan>,T<tilt>  C  A  R0/R1  W0/W1  Z"));
 }
 
 void loop() {
@@ -253,7 +256,8 @@ void loop() {
   if (mode == AUTO) {
     if (reactEnabled) updatePerson(); else personNear = false;
     if (personNear) stareBehavior();
-    else if (now >= tNextIdle && arrived()) idleWander();
+    else if (wander) { if (now >= tNextIdle && arrived()) idleWander(); }
+    else if (tgtPan != PAN_CENTER || tgtTilt != TILT_CENTER) setTarget(PAN_CENTER, TILT_CENTER, 4.0); // parado no centro
   }
 
   if (now - tStep >= 10) { tStep = now; stepServos(); }
