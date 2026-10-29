@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Olho Cérebro</title>
+<meta name="description" content="Cérebro do olho: câmera acha rostos, voz conversa, Bluetooth move os servos do Arduino.">
+<style>
+  :root{
+    --bg:#0b0b0f; --panel:#15151d; --line:#262633; --text:#ecebf3; --muted:#9a98ad;
+    --accent:#e6c66a; --ok:#6fcf97; --warn:#f2994a; --bad:#eb5757; --iris:#3f7fbf;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,system-ui,Segoe UI,Roboto,sans-serif}
+  header{padding:14px 16px 8px;display:flex;align-items:center;gap:10px}
+  header h1{font-size:18px;margin:0;letter-spacing:.3px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--bad);display:inline-block}
+  .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)}
+  nav{display:flex;gap:6px;padding:0 16px 10px;overflow-x:auto}
+  nav button{flex:1;min-width:70px;background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:9px 6px;font-weight:600}
+  nav button.on{color:var(--text);border-color:var(--accent)}
+  main{padding:0 16px 90px;max-width:720px;margin:0 auto}
+  section{display:none} section.on{display:block}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+  .card h2{font-size:14px;margin:0 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .row > *{flex:1}
+  button.b{background:#23232f;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-weight:600;font-size:15px}
+  button.b.p{background:var(--accent);color:#1a1405;border-color:var(--accent)}
+  button.b.d{background:#3a1b1b;border-color:#5a2a2a}
+  button:disabled{opacity:.45}
+  label{display:block;font-size:13px;color:var(--muted);margin:8px 0 4px}
+  input[type=text],input[type=password],input[type=number],select,textarea{width:100%;background:#0f0f15;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px 10px;font-size:15px}
+  textarea{min-height:120px;font-family:inherit}
+  input[type=range]{width:100%}
+  .kv{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:14px}
+  .kv b{color:var(--muted);font-weight:500}
+  video{width:100%;border-radius:12px;background:#000;transform:scaleX(var(--mirror,1))}
+  .vid{position:relative}
+  canvas.ov{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;transform:scaleX(var(--mirror,1))}
+  #log{font:12px/1.4 ui-monospace,Menlo,monospace;color:#c9c7d8;background:#0f0f15;border:1px solid var(--line);border-radius:9px;padding:8px;height:160px;overflow:auto;white-space:pre-wrap}
+  .eye{width:min(60vw,260px);margin:6px auto;display:block}
+  .pill{display:inline-block;padding:3px 9px;border-radius:999px;background:#23232f;color:var(--muted);font-size:12px;margin-right:6px}
+  .pill.on{background:#2a3a2e;color:var(--ok)}
+  .bubble{background:#0f0f15;border:1px solid var(--line);border-radius:12px;padding:10px;margin:6px 0;font-size:15px}
+  .bubble.me{border-color:#3a3a4a} .bubble.eye{border-color:var(--accent)}
+  .small{font-size:12px;color:var(--muted)}
+  footer{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(transparent,var(--bg) 30%);padding:12px 16px 18px}
+  footer .row > *{flex:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>Olho Cérebro <span class="small">v5</span></h1>
+  <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
+  <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
+  <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
+</header>
+<nav>
+  <button data-t="olho" class="on">Olho</button>
+  <button data-t="ver">Ver</button>
+  <button data-t="falar">Falar</button>
+  <button data-t="config">Config</button>
+  <button data-t="logtab">Log</button>
+</nav>
+
+<main>
+<!-- ===================== OLHO ===================== -->
+<section id="olho" class="on">
+  <div class="card">
+    <svg class="eye" viewBox="0 0 200 200" aria-label="simulador do olho">
+      <defs><radialGradient id="g" cx="50%" cy="50%"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#d9d6cf"/></radialGradient></defs>
+      <circle cx="100" cy="100" r="96" fill="url(#g)" stroke="#8a8578" stroke-width="2"/>
+      <g id="irisG" transform="translate(0,0)">
+        <circle cx="100" cy="100" r="40" fill="var(--iris)"/>
+        <circle cx="100" cy="100" r="18" fill="#0a0a0a"/>
+        <circle cx="112" cy="88" r="6" fill="#fff" opacity=".85"/>
+      </g>
+    </svg>
+    <div class="kv">
+      <b>modo</b><span id="kMode">—</span>
+      <b>pan / tilt</b><span id="kAng">— / —</span>
+      <b>ultrassom esq / dir</b><span id="kDist">— / —</span>
+      <b>rosto</b><span id="kFace">—</span>
+      <b>conversa</b><span id="kTalk">parada</span>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Controle manual (teste)</h2>
+    <label>pan <span id="vPan">90</span>°</label><input type="range" id="sPan" min="35" max="145" value="90">
+    <label>tilt <span id="vTilt">90</span>°</label><input type="range" id="sTilt" min="55" max="125" value="90">
+    <div class="row" style="margin-top:8px">
+      <button class="b" id="bAuto">Automático</button>
+      <button class="b" id="bRemote">Remoto (segurar)</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="b" id="bCenter">Centro</button>
+      <button class="b" id="bReact">Reação ultrassom: on</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== VER ===================== -->
+<section id="ver">
+  <div class="card">
+    <div class="vid"><video id="video" playsinline muted autoplay></video><canvas id="ov" class="ov"></canvas></div>
+    <div class="row" style="margin-top:10px">
+      <button class="b p" id="bCam">Ligar câmera</button>
+      <button class="b" id="bFlip">Trocar câmera</button>
+    </div>
+    <div class="small" style="margin-top:8px">Quando acha um rosto, manda pan/tilt pro Uno a 10 Hz. Sem rosto por 1,5 s, o Uno volta a vagar sozinho.</div>
+  </div>
+</section>
+
+<!-- ===================== FALAR ===================== -->
+<section id="falar">
+  <div class="card">
+    <div class="row">
+      <button class="b p" id="bTalkOn">Ligar conversa</button>
+      <button class="b" id="bSay">Falar uma frase agora</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="b" id="bListen">Ouvir 1 vez</button>
+      <button class="b" id="bTestTTS">Testar voz</button>
+    </div>
+    <div class="small" style="margin-top:8px">Dispara quando um rosto chega perto (câmera) ou quando o Uno manda <code>E:perto</code>. Fala, ouve, responde, até acabar a conversa. Depois espera o cooldown.</div>
+  </div>
+  <div class="card"><h2>Conversa</h2><div id="chat"></div></div>
+</section>
+
+<!-- ===================== CONFIG ===================== -->
+<section id="config">
+  <div class="card">
+    <h2>Bluetooth (HM-10)</h2>
+    <div class="row"><button class="b p" id="bBle">Conectar HM-10</button><button class="b" id="bBleOff">Desconectar</button></div>
+    <div class="small" style="margin-top:6px">Chrome no Android ou no computador. iPhone não tem Web Bluetooth.</div>
+  </div>
+  <div class="card">
+    <h2>Claude</h2>
+    <label>Chave de API (fica só neste aparelho)</label><input type="password" id="apiKey" placeholder="sk-ant-...">
+    <label>Modelo</label>
+    <select id="model">
+      <option value="claude-haiku-5-5">claude-haiku-5-5 (rápido, barato)</option>
+      <option value="claude-sonnet-5-5">claude-sonnet-5-5</option>
+    </select>
+    <label>Idioma da conversa</label>
+    <select id="lang"><option value="en-US">English</option><option value="pt-BR">Português</option></select>
+    <label>Personalidade do olho (system prompt)</label>
+    <textarea id="persona"></textarea>
+    <div class="row" style="margin-top:8px"><button class="b" id="bPersonaReset">Restaurar texto padrão</button><button class="b p" id="bSave">Salvar</button></div>
+  </div>
+  <div class="card">
+    <h2>Rastreio</h2>
+    <label>pan centro <span id="vPC">90</span></label><input type="range" id="cPanC" min="60" max="120" value="90">
+    <label>pan alcance <span id="vPS">60</span>° (quanto o olho vira da borda à borda da imagem)</label><input type="range" id="cPanS" min="20" max="110" value="60">
+    <label>tilt centro <span id="vTC">90</span></label><input type="range" id="cTiltC" min="60" max="120" value="90">
+    <label>tilt alcance <span id="vTS">40</span>°</label><input type="range" id="cTiltS" min="10" max="80" value="40">
+    <label><input type="checkbox" id="cInvPan"> inverter pan</label>
+    <label><input type="checkbox" id="cInvTilt"> inverter tilt</label>
+    <label>rosto "perto" quando a largura passa de <span id="vNear">22</span> % da imagem</label><input type="range" id="cNear" min="10" max="50" value="22">
+    <label>cooldown entre conversas <span id="vCool">25</span> s</label><input type="range" id="cCool" min="5" max="120" value="25">
+    <label>máximo de trocas por conversa <span id="vTurns">3</span></label><input type="range" id="cTurns" min="1" max="8" value="3">
+  </div>
+</section>
+
+<!-- ===================== LOG ===================== -->
+<section id="logtab"><div class="card"><div id="log"></div><div class="row" style="margin-top:8px"><button class="b" id="bClear">Limpar</button></div></div></section>
+</main>
+
+<footer><div class="row">
+  <button class="b p" id="bStart">▶ Iniciar tudo</button>
+  <button class="b d" id="bStop">■ Parar</button>
+</div></footer>
+
+<script type="module">
+/* =========================================================
+   Olho Cérebro — tudo num arquivo.
+   Partes: UI · BLE (HM-10) · Visão (MediaPipe) · Voz (Web Speech) · Claude
+   ========================================================= */
+const $ = (s)=>document.querySelector(s);
+const log = (...a)=>{ const el=$('#log'); const line=`[${new Date().toLocaleTimeString()}] ${a.join(' ')}`; el.textContent += line+'\n'; el.scrollTop=el.scrollHeight; console.log(line); };
+$('#bClear').onclick=()=>$('#log').textContent='';
+
+// -------- abas
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('main section').forEach(s=>s.classList.toggle('on',s.id===b.dataset.t));
+});
+
+// -------- config persistida
+const DEFAULT_PERSONA = `You are THE EYE: a giant, unblinking surrealist eye living inside a wire birdcage on top of a woman's head at a surrealist ball (Halloween 2026, New Haven). You can see and hear the person in front of you.
+Style: deadpan, uncanny, a little playful. Magritte, Dalí, Buñuel. Short. One or two sentences, max 25 words. Never use emojis. Never say you are an AI unless directly asked, then admit it briefly and stay in character.
+You like asking one strange, specific question back (about dreams, mirrors, what they are hiding, what they last saw).
+If asked who built you: a Yale CS/ECE student built you in two days with an Arduino, two servos and two ultrasonic sensors; the brain is an old phone running in a browser.
+If someone is rude, be dry and unimpressed. Never insult anyone's appearance.`;
+const cfg = {
+  get(k,d){ try{ const v=localStorage.getItem('olho.'+k); return v===null?d:JSON.parse(v);}catch{return d;} },
+  set(k,v){ try{ localStorage.setItem('olho.'+k, JSON.stringify(v)); }catch{} },
+};
+const fields = {
+  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','en-US'], persona:['#persona',DEFAULT_PERSONA],
+  panC:['#cPanC',90], panS:['#cPanS',60], tiltC:['#cTiltC',90], tiltS:['#cTiltS',40],
+  invPan:['#cInvPan',false], invTilt:['#cInvTilt',false], near:['#cNear',22], cool:['#cCool',25], turns:['#cTurns',3],
+};
+const C = {};
+function loadCfg(){
+  for (const [k,[sel,d]] of Object.entries(fields)){
+    const el=$(sel); const v=cfg.get(k,d); C[k]=v;
+    if (el.type==='checkbox') el.checked=!!v; else el.value=v;
+  }
+  refreshCfgLabels();
+  $('#dApi').className='dot '+(C.apiKey?'ok':'');
+}
+function saveCfg(){
+  for (const [k,[sel]] of Object.entries(fields)){
+    const el=$(sel); const v = el.type==='checkbox'?el.checked:(el.type==='range'?Number(el.value):el.value);
+    C[k]=v; cfg.set(k,v);
+  }
+  refreshCfgLabels(); $('#dApi').className='dot '+(C.apiKey?'ok':''); log('config salva');
+}
+function refreshCfgLabels(){
+  $('#vPC').textContent=$('#cPanC').value; $('#vPS').textContent=$('#cPanS').value;
+  $('#vTC').textContent=$('#cTiltC').value; $('#vTS').textContent=$('#cTiltS').value;
+  $('#vNear').textContent=$('#cNear').value; $('#vCool').textContent=$('#cCool').value; $('#vTurns').textContent=$('#cTurns').value;
+}
+document.querySelectorAll('#config input, #config select, #config textarea').forEach(el=>el.addEventListener('input',()=>{refreshCfgLabels(); saveCfg();}));
+$('#bSave').onclick=saveCfg;
+$('#bPersonaReset').onclick=()=>{ $('#persona').value=DEFAULT_PERSONA; saveCfg(); };
+loadCfg();
+
+// -------- estado
+const S = { mode:'—', pan:90, tilt:90, dl:'—', dr:'—', face:null, faceNear:false, talking:false, running:false, react:true, lastCool:0 };
+function drawEye(){
+  const dx=((S.pan-90)/55)*-45, dy=((S.tilt-90)/35)*-30; // sinal: pan maior = olha pra esquerda da imagem
+  $('#irisG').setAttribute('transform',`translate(${dx.toFixed(1)},${dy.toFixed(1)})`);
+  $('#kMode').textContent=S.mode; $('#kAng').textContent=`${Math.round(S.pan)} / ${Math.round(S.tilt)}`;
+  $('#kDist').textContent=`${S.dl} / ${S.dr}`; $('#kFace').textContent= S.face? `x ${S.face.x.toFixed(2)} y ${S.face.y.toFixed(2)} w ${(S.face.w*100).toFixed(0)}% ${S.faceNear?'(perto)':''}` : 'nenhum';
+}
+
+// ========================= BLE (HM-10) =========================
+const BLE = { dev:null, ch:null, q:Promise.resolve() };
+const UUID_SVC=0xFFE0, UUID_CHR=0xFFE1;
+async function bleConnect(){
+  if(!navigator.bluetooth){ log('Web Bluetooth não existe neste navegador'); return; }
+  try{
+    const dev = await navigator.bluetooth.requestDevice({ filters:[{services:[UUID_SVC]}], optionalServices:[UUID_SVC] });
+    const srv = await (await dev.gatt.connect()).getPrimaryService(UUID_SVC);
+    const ch  = await srv.getCharacteristic(UUID_CHR);
+    await ch.startNotifications();
+    ch.addEventListener('characteristicvaluechanged', e=>onBleData(new TextDecoder().decode(e.target.value)));
+    dev.addEventListener('gattserverdisconnected', ()=>{ BLE.ch=null; $('#dBle').className='dot'; log('BLE caiu'); });
+    BLE.dev=dev; BLE.ch=ch; $('#dBle').className='dot ok'; log('BLE conectado:', dev.name||'HM-10');
+    bleSend('Z');
+  }catch(e){ log('BLE erro:', e.message||e); }
+}
+function bleDisconnect(){ try{ BLE.dev?.gatt.disconnect(); }catch{} BLE.ch=null; $('#dBle').className='dot'; }
+let rxBuf='';
+function onBleData(s){
+  rxBuf+=s; let i;
+  while((i=rxBuf.indexOf('\n'))>=0){ const line=rxBuf.slice(0,i).trim(); rxBuf=rxBuf.slice(i+1); if(line) onUnoLine(line); }
+}
+function onUnoLine(line){
+  if(line[0]==='D'){ const m=line.match(/^D(-?\d+),(-?\d+),([AR])/); if(m){ S.dl=m[1]==='999'?'—':m[1]; S.dr=m[2]==='999'?'—':m[2]; S.mode=m[3]==='A'?'automático':'remoto'; drawEye(); } }
+  else if(line==='E:perto'){ log('Uno: alguém perto'); maybeStartTalk('ultrassom'); }
+  else if(line==='E:longe'){ log('Uno: saiu'); }
+  else log('Uno:', line);
+}
+function bleSend(line){
+  if(!BLE.ch) return false;
+  const data=new TextEncoder().encode(line+'\n');
+  BLE.q = BLE.q.then(async()=>{ for(let i=0;i<data.length;i+=20){ const chunk=data.slice(i,i+20); try{ if(BLE.ch.writeValueWithoutResponse) await BLE.ch.writeValueWithoutResponse(chunk); else await BLE.ch.writeValue(chunk);}catch(e){ log('BLE write:',e.message);} } });
+  return true;
+}
+let lastSent={p:-1,t:-1,at:0};
+function sendAngles(p,t,force=false){
+  p=Math.round(p); t=Math.round(t); const now=performance.now();
+  if(!force && Math.abs(p-lastSent.p)<1 && Math.abs(t-lastSent.t)<1 && now-lastSent.at<400) return;
+  if(!force && now-lastSent.at<100) return; // 10 Hz máx
+  lastSent={p,t,at:now}; S.pan=p; S.tilt=t; if(!BLE.ch) S.mode='simulador'; drawEye();
+  // inversão vale pra tudo (sliders, centro, rastreio): a tela mostra a intenção, o Uno recebe o ângulo espelhado
+  const sp = C.invPan ? Math.round(2*C.panC - p) : p;
+  const st = C.invTilt ? Math.round(2*C.tiltC - t) : t;
+  bleSend(`P${sp},T${st}`);
+}
+$('#bBle').onclick=bleConnect; $('#bBleOff').onclick=bleDisconnect;
+// segurar posição manual: o Uno volta pro automático se ficar 1,5 s sem mensagem, então reenvia a cada 600 ms
+let holdTimer=null, holdP=90, holdT=90;
+function paintModeButtons(){ $('#bRemote').classList.toggle('p',!!holdTimer); $('#bAuto').classList.toggle('p',!holdTimer); }
+function startHold(p,t){ holdP=p; holdT=t; sendAngles(p,t,true); if(!holdTimer) holdTimer=setInterval(()=>{ if(!S.face) sendAngles(holdP,holdT,true); },400); paintModeButtons(); }
+function stopHold(){ if(holdTimer){ clearInterval(holdTimer); holdTimer=null; } paintModeButtons(); }
+$('#bRemote').onclick=()=>startHold(+$('#sPan').value,+$('#sTilt').value);
+$('#bCenter').onclick=()=>{ $('#sPan').value=C.panC; $('#sTilt').value=C.tiltC; $('#vPan').textContent=C.panC; $('#vTilt').textContent=C.tiltC; startHold(C.panC,C.tiltC); };
+$('#bAuto').onclick=()=>{ stopHold(); bleSend('A'); S.mode='automático'; drawEye(); };
+$('#bReact').onclick=()=>{ S.react=!S.react; bleSend(S.react?'R1':'R0'); $('#bReact').textContent='Reação ultrassom: '+(S.react?'on':'off'); };
+$('#sPan').oninput=e=>{ $('#vPan').textContent=e.target.value; startHold(+e.target.value,+$('#sTilt').value); };
+$('#sTilt').oninput=e=>{ $('#vTilt').textContent=e.target.value; startHold(+$('#sPan').value,+e.target.value); };
+
+// ========================= VISÃO (MediaPipe) =========================
+import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+const V = { stream:null, det:null, facing:'environment', raf:0, lastFaceAt:0, ema:null, busy:false, lastTs:0 };
+const video=$('#video'), ov=$('#ov'), octx=ov.getContext('2d');
+async function camOn(){
+  try{
+    if(V.stream) V.stream.getTracks().forEach(t=>t.stop());
+    V.stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:V.facing, width:{ideal:640}, height:{ideal:480} }, audio:false });
+    video.srcObject=V.stream; await video.play();
+    document.documentElement.style.setProperty('--mirror', V.facing==='user'?-1:1);
+    if(!V.det){
+      log('carregando detector de rosto…');
+      const fs = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+      V.det = await FaceDetector.createFromOptions(fs,{ baseOptions:{ modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite", delegate:"GPU" }, runningMode:"VIDEO", minDetectionConfidence:0.5 });
+      log('detector pronto');
+    }
+    $('#dCam').className='dot ok'; $('#bCam').textContent='Câmera ligada';
+    cancelAnimationFrame(V.raf); loopVision();
+  }catch(e){ log('câmera erro:', e.message||e); $('#dCam').className='dot'; }
+}
+function camOff(){ cancelAnimationFrame(V.raf); V.stream?.getTracks().forEach(t=>t.stop()); V.stream=null; $('#dCam').className='dot'; $('#bCam').textContent='Ligar câmera'; S.face=null; drawEye(); }
+$('#bCam').onclick=()=>V.stream?camOff():camOn();
+$('#bFlip').onclick=()=>{ V.facing = V.facing==='user'?'environment':'user'; if(V.stream) camOn(); };
+
+function loopVision(){
+  V.raf=requestAnimationFrame(loopVision);
+  if(!V.det || video.readyState<2) return;
+  const ts=performance.now(); if(ts-V.lastTs<90) return; V.lastTs=ts;  // ~10 fps, economiza bateria
+  const res = V.det.detectForVideo(video, ts);
+  const W=video.videoWidth, H=video.videoHeight; if(ov.width!==W){ov.width=W;ov.height=H;}
+  octx.clearRect(0,0,W,H);
+  let best=null;
+  for(const d of res.detections){ const b=d.boundingBox; if(!best||b.width*b.height>best.width*best.height) best=b; }
+  if(best){
+    octx.strokeStyle='#e6c66a'; octx.lineWidth=3; octx.strokeRect(best.originX,best.originY,best.width,best.height);
+    const x=(best.originX+best.width/2)/W, y=(best.originY+best.height/2)/H, w=best.width/W;
+    const a=0.5; V.ema = V.ema? {x:V.ema.x+(x-V.ema.x)*a, y:V.ema.y+(y-V.ema.y)*a, w:V.ema.w+(w-V.ema.w)*a} : {x,y,w};
+    S.face=V.ema; V.lastFaceAt=ts;
+    // câmera traseira: x=0 é a ESQUERDA da cena vista pela câmera, que é a direita de quem olha pro olho.
+    let sx=(0.5-V.ema.x), sy=(0.5-V.ema.y);
+    if(V.facing==='user') sx=-sx;
+    const pan = C.panC + sx*C.panS, tilt = C.tiltC + sy*C.tiltS;
+    sendAngles(pan,tilt);
+    const near = V.ema.w*100 >= C.near;
+    if(near && !S.faceNear) maybeStartTalk('rosto');
+    S.faceNear=near;
+  } else {
+    if(ts-V.lastFaceAt>1500){ S.face=null; V.ema=null; S.faceNear=false; }
+  }
+  drawEye();
+}
+
+// ========================= VOZ + CLAUDE =========================
+const T = { on:false, busy:false, history:[], voice:null };
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function pickVoice(){
+  const vs=speechSynthesis.getVoices(); if(!vs.length) return null;
+  const lang=C.lang; const pref = vs.filter(v=>v.lang.replace('_','-').startsWith(lang.split('-')[0]));
+  return pref.find(v=>/Google|Natural|Premium|Enhanced/i.test(v.name)) || pref[0] || vs[0];
+}
+speechSynthesis.onvoiceschanged=()=>{ T.voice=pickVoice(); };
+function speak(text){
+  return new Promise(res=>{
+    if(!('speechSynthesis' in window)) return res();
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text); u.lang=C.lang; if(!T.voice) T.voice=pickVoice(); if(T.voice) u.voice=T.voice;
+    u.rate=0.92; u.pitch=0.75; // mais grave e lento: menos assistente, mais criatura
+    u.onend=res; u.onerror=res; speechSynthesis.speak(u);
+    setTimeout(res, 15000);
+  });
+}
+function listen(ms=6000){
+  return new Promise(res=>{
+    if(!SR){ log('sem reconhecimento de fala neste navegador'); return res(null); }
+    const r=new SR(); r.lang=C.lang; r.interimResults=false; r.maxAlternatives=1; r.continuous=false;
+    let done=false; const finish=v=>{ if(done) return; done=true; try{r.stop();}catch{} res(v); };
+    r.onresult=e=>finish(e.results[0][0].transcript);
+    r.onerror=e=>{ log('ouvir erro:', e.error); finish(null); };
+    r.onend=()=>finish(null);
+    try{ r.start(); $('#kTalk').textContent='ouvindo…'; }catch(e){ finish(null); }
+    setTimeout(()=>finish(null), ms);
+  });
+}
+function addBubble(who,text){ const d=document.createElement('div'); d.className='bubble '+who; d.textContent=(who==='eye'?'👁 ':'🗣 ')+text; $('#chat').prepend(d); }
+async function askClaude(userText, situation){
+  if(!C.apiKey){ log('sem chave de API'); return null; }
+  const sys = C.persona + `\nLanguage: reply in ${C.lang==='pt-BR'?'Brazilian Portuguese':'English'}.`;
+  const msgs = [...T.history];
+  msgs.push({ role:'user', content: userText ? userText : `[${situation}] A person just came close to look at you. Say your opening line.` });
+  try{
+    const r = await fetch('https://api.anthropic.com/v1/messages',{ method:'POST', headers:{ 'content-type':'application/json', 'x-api-key':C.apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({ model:C.model, max_tokens:90, system:sys, messages:msgs }) });
+    if(!r.ok){ log('Claude HTTP', r.status, (await r.text()).slice(0,200)); return null; }
+    const j = await r.json(); const text = (j.content||[]).map(c=>c.text||'').join(' ').trim();
+    T.history.push(msgs[msgs.length-1], { role:'assistant', content:text });
+    if(T.history.length>10) T.history=T.history.slice(-10);
+    return text;
+  }catch(e){ log('Claude erro:', e.message||e); return null; }
+}
+async function conversation(trigger){
+  T.busy=true; $('#kTalk').textContent='falando…'; log('conversa iniciada por', trigger);
+  T.history=[];
+  let line = await askClaude(null, trigger) || (C.lang==='pt-BR'?'Eu te vi antes de você me ver.':'I saw you before you saw me.');
+  addBubble('eye',line); await speak(line);
+  for(let turn=0; turn<C.turns; turn++){
+    const heard = await listen(6000);
+    if(!heard){ log('silêncio, encerrando'); break; }
+    addBubble('me',heard); $('#kTalk').textContent='pensando…';
+    const reply = await askClaude(heard,'reply'); if(!reply) break;
+    addBubble('eye',reply); $('#kTalk').textContent='falando…'; await speak(reply);
+  }
+  T.busy=false; S.lastCool=Date.now(); $('#kTalk').textContent='cooldown';
+  setTimeout(()=>{ if(!T.busy) $('#kTalk').textContent='parada'; }, C.cool*1000);
+}
+function maybeStartTalk(trigger){
+  if(!T.on || T.busy) return;
+  if(Date.now()-S.lastCool < C.cool*1000) return;
+  conversation(trigger);
+}
+$('#bTalkOn').onclick=()=>{ T.on=!T.on; $('#bTalkOn').textContent=T.on?'Conversa ligada':'Ligar conversa'; $('#bTalkOn').classList.toggle('p',!T.on); if(T.on) speechSynthesis.getVoices(); };
+$('#bSay').onclick=()=>{ if(!T.busy) conversation('botão'); };
+$('#bListen').onclick=async()=>{ const h=await listen(6000); log('ouvi:', h); if(h) addBubble('me',h); $('#kTalk').textContent='parada'; };
+$('#bTestTTS').onclick=()=>speak(C.lang==='pt-BR'?'Eu sou o olho. Não pisco.':'I am the eye. I do not blink.');
+
+// ========================= iniciar / parar =========================
+let wakeLock=null;
+$('#bStart').onclick=async()=>{
+  S.running=true;
+  try{ wakeLock = await navigator.wakeLock?.request('screen'); }catch{}
+  if(!BLE.ch) await bleConnect();
+  await camOn();
+  if(!T.on) $('#bTalkOn').click();
+  log('tudo iniciado');
+};
+$('#bStop').onclick=()=>{ S.running=false; stopHold(); camOff(); if(T.on) $('#bTalkOn').click(); speechSynthesis.cancel(); bleSend('A'); try{wakeLock?.release();}catch{} log('parado, Uno em automático'); };
+document.addEventListener('visibilitychange',async()=>{ if(document.visibilityState==='visible' && S.running){ try{ wakeLock = await navigator.wakeLock?.request('screen'); }catch{} } });
+
+paintModeButtons(); drawEye();
+log('pronto. Config → chave de API. Depois ▶ Iniciar tudo.');
+</script>
+</body>
+</html>
