@@ -51,7 +51,7 @@
 </head>
 <body>
 <header>
-  <h1>Olho Cérebro <span class="small">v5</span></h1>
+  <h1>Olho Cérebro <span class="small">v6</span></h1>
   <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
   <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
   <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
@@ -91,7 +91,7 @@
     <label>tilt <span id="vTilt">90</span>°</label><input type="range" id="sTilt" min="55" max="125" value="90">
     <div class="row" style="margin-top:8px">
       <button class="b" id="bAuto">Automático</button>
-      <button class="b" id="bRemote">Remoto (segurar)</button>
+      <button class="b" id="bRemote">Remoto (espelha a tela)</button>
     </div>
     <div class="row" style="margin-top:8px">
       <button class="b" id="bCenter">Centro</button>
@@ -251,6 +251,7 @@ async function bleConnect(){
     dev.addEventListener('gattserverdisconnected', ()=>{ BLE.ch=null; $('#dBle').className='dot'; log('BLE caiu'); });
     BLE.dev=dev; BLE.ch=ch; $('#dBle').className='dot ok'; log('BLE conectado:', dev.name||'HM-10');
     bleSend('Z');
+    startHold(C.panC,C.tiltC); // conectado = remoto: a peça espelha a tela até você clicar em Automático
   }catch(e){ log('BLE erro:', e.message||e); }
 }
 function bleDisconnect(){ try{ BLE.dev?.gatt.disconnect(); }catch{} BLE.ch=null; $('#dBle').className='dot'; }
@@ -272,11 +273,12 @@ function bleSend(line){
   return true;
 }
 let lastSent={p:-1,t:-1,at:0};
+let holdTimer=null, holdP=90, holdT=90;
 function sendAngles(p,t,force=false){
   p=Math.round(p); t=Math.round(t); const now=performance.now();
   if(!force && Math.abs(p-lastSent.p)<1 && Math.abs(t-lastSent.t)<1 && now-lastSent.at<400) return;
   if(!force && now-lastSent.at<100) return; // 10 Hz máx
-  lastSent={p,t,at:now}; S.pan=p; S.tilt=t; if(!BLE.ch) S.mode='simulador'; drawEye();
+  lastSent={p,t,at:now}; S.pan=p; S.tilt=t; holdP=p; holdT=t; if(!BLE.ch) S.mode='simulador'; drawEye();
   // inversão vale pra tudo (sliders, centro, rastreio): a tela mostra a intenção, o Uno recebe o ângulo espelhado
   const sp = C.invPan ? Math.round(2*C.panC - p) : p;
   const st = C.invTilt ? Math.round(2*C.tiltC - t) : t;
@@ -284,9 +286,8 @@ function sendAngles(p,t,force=false){
 }
 $('#bBle').onclick=bleConnect; $('#bBleOff').onclick=bleDisconnect;
 // segurar posição manual: o Uno volta pro automático se ficar 1,5 s sem mensagem, então reenvia a cada 600 ms
-let holdTimer=null, holdP=90, holdT=90;
 function paintModeButtons(){ $('#bRemote').classList.toggle('p',!!holdTimer); $('#bAuto').classList.toggle('p',!holdTimer); }
-function startHold(p,t){ holdP=p; holdT=t; sendAngles(p,t,true); if(!holdTimer) holdTimer=setInterval(()=>{ if(!S.face) sendAngles(holdP,holdT,true); },400); paintModeButtons(); }
+function startHold(p,t){ holdP=p; holdT=t; sendAngles(p,t,true); if(!holdTimer) holdTimer=setInterval(()=>{ sendAngles(holdP,holdT,true); },400); paintModeButtons(); }
 function stopHold(){ if(holdTimer){ clearInterval(holdTimer); holdTimer=null; } paintModeButtons(); }
 $('#bRemote').onclick=()=>startHold(+$('#sPan').value,+$('#sTilt').value);
 $('#bCenter').onclick=()=>{ $('#sPan').value=C.panC; $('#sTilt').value=C.tiltC; $('#vPan').textContent=C.panC; $('#vTilt').textContent=C.tiltC; startHold(C.panC,C.tiltC); };
@@ -312,6 +313,7 @@ async function camOn(){
       log('detector pronto');
     }
     $('#dCam').className='dot ok'; $('#bCam').textContent='Câmera ligada';
+    if(BLE.ch && !holdTimer) startHold(holdP,holdT);
     cancelAnimationFrame(V.raf); loopVision();
   }catch(e){ log('câmera erro:', e.message||e); $('#dCam').className='dot'; }
 }
