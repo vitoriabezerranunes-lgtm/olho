@@ -1,5 +1,5 @@
 /*
-  OLHO — firmware do Arduino Uno (Halloween 2026)
+  OLHO — firmware do Arduino Uno (Halloween 2026) — v3
   ------------------------------------------------
   Um olho gigante num pan-tilt de 2 servos, com dois sensores
   ultrassônicos HC-SR04 e um módulo Bluetooth BLE HM-10.
@@ -8,7 +8,7 @@
     AUTO    : o olho vagueia sozinho (sacadas) e reage a quem chega perto
               (ultrassom esquerdo/direito).
     REMOTO  : um celular manda ângulos por BLE ("P120,T85"). Se ficar
-              3 s sem receber nada, volta sozinho pro modo AUTO.
+              30 s sem receber nada, volta sozinho pro modo AUTO.
 
   Comandos (mesmos por USB Serial e por BLE, uma linha cada):
     P<pan>,T<tilt>   ex: P120,T85   -> vai pra esse ângulo (entra em REMOTO)
@@ -49,7 +49,7 @@ const unsigned long SIDE_HOLD_MS   = 500;   // lado novo tem que durar isso
 const unsigned long STARE_MIN_MS   = 2000;  // encara por 2 a 4 s
 const unsigned long STARE_MAX_MS   = 4000;
 const unsigned long GLANCE_MS      = 700;   // desvia o olhar rapidinho
-const unsigned long REMOTE_TIMEOUT = 3000;  // sem BLE por isso -> AUTO (3 s: tolera mensagens perdidas)
+const unsigned long REMOTE_TIMEOUT = 30000; // sem BLE por isso -> AUTO (30 s: só se o celular sumir de verdade)
 // -------------------------------------------------
 
 const int PIN_PAN = 9, PIN_TILT = 10;
