@@ -1,5 +1,5 @@
 /*
-  OLHO — firmware do Arduino Uno (Halloween 2026) — v5
+  OLHO — firmware do Arduino Uno (Halloween 2026) — v6
   ------------------------------------------------
   Um olho gigante num pan-tilt de 2 servos, com dois sensores
   ultrassônicos HC-SR04 e um módulo Bluetooth BLE HM-10.
@@ -62,7 +62,7 @@ SoftwareSerial ble(BLE_RX, BLE_TX);
 
 enum Mode { AUTO, REMOTE };
 Mode mode = AUTO;
-bool reactEnabled = true;
+bool reactEnabled = false;  // v6: SEM sensores por padrão. R1 liga a reação ao ultrassom se eles forem ligados.
 bool wander = false;   // W1 liga o "vagar vivo"; padrão desligado: parado até algo acontecer
 
 // posição atual e alvo (em graus de servo já com centro aplicado)
@@ -238,7 +238,7 @@ void setup() {
   curPan = tgtPan = PAN_CENTER; curTilt = tgtTilt = TILT_CENTER;
   panServo.write(PAN_CENTER); tiltServo.write(TILT_CENTER);
   delay(600);
-  Serial.println(F("OLHO v5 pronto. Comandos: P<pan>,T<tilt>  C  A  R0/R1  W0/W1  Z"));
+  Serial.println(F("OLHO v6 pronto (sem sensor; R1 liga). Comandos: P<pan>,T<tilt>  C  A  R0/R1  W0/W1  Z"));
 }
 
 void loop() {
