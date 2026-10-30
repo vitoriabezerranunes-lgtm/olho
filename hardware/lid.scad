@@ -14,6 +14,8 @@ difference() {
     translate([sx*(pt_x/2-2.5), 18 + sy*(pt_y/2), -5]) cylinder(d=3.2, h=10);
     translate([sx*(pt_x/2+2.5), 18 + sy*(pt_y/2), -5]) cylinder(d=3.2, h=10);
   }
+  // alívio pro parafuso central da base do pan-tilt
+  translate([0, 18, -5]) cylinder(d=10, h=10);
   // passagem dos fios dos servos (atrás do pan-tilt)
   translate([-8, 18 + pt_y/2+8, -5]) cube([16, 7, 10]);
   // furos de segurança nos cantos (velcro ou parafuso)
