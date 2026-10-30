@@ -4,7 +4,7 @@ use <body.scad>
 use <lid.scad>
 PAINT = 0;            // 0 = como impresso (tudo preto); 1 = pintado (dourado nos relevos/gravações)
 PART = 0;             // 0 = montado (render), 1 = só corpo (STL), 2 = só tampa (STL)
-STYLE = 1;            // 0 = sóbrio (molduras + olhos soltos), 1 = gótico (lancetas, quadrifólios, pináculos, contrafortes)
+STYLE = 1;            // 0 = sóbrio, 1 = gótico, 2 = clássico/barroco (rosetas, louros, acanto, dentículos, óvulos, pilastras)
 NAME = "ARGUS";
 MOTTO = "VIDEO ERGO SUM";
 FONT = "Liberation Serif:style=Bold";
@@ -54,6 +54,23 @@ module buttress(hgt){ // perfil escalonado nas arestas verticais
 module plinth(l, w, hh=5, out=0.9){ difference(){ translate([0,0,hh/2]) cube([l+2*out, w+2*out, hh], center=true); translate([0,0,hh/2]) cube([l-1, w-1, hh+2], center=true); } }
 module trefoil_crown(r=22, n=14){ for (i=[0:n-1]) rotate([0,0,i*360/n]) translate([r,0,0]) difference(){ circle(r=2.4,$fn=24); circle(r=1.4,$fn=24); } }
 
+
+// ---------- vocabulário clássico / barroco ----------
+module rosette2d(r=5, n=8){ for(a=[0:360/n:359]) rotate(a) translate([r*0.55,0]) scale([1,0.42]) circle(r=r*0.5,$fn=24); circle(r=r*0.28,$fn=24); difference(){ circle(r=r*0.22,$fn=24); circle(r=r*0.12,$fn=16);} }
+module rosette_grid(width, height, pitch=14, r=4.6){ nx=floor(width/pitch); nz=floor(height/pitch); for(i=[0:nx-1], j=[0:nz-1]) translate([-(nx-1)*pitch/2 + i*pitch, 0, 8 + j*pitch + pitch/2]) rotate([90,0,0]) linear_extrude(rel) rosette2d(r); }
+module dentils(len, pitch=6, w=3, h=4){ for (i=[0:floor(len/pitch)-1]) translate([-len/2 + pitch/2 + i*pitch - w/2, 0, 0]) cube([w, 1.0, h]); }
+module egg_dart(len, pitch=7){ for (i=[0:floor(len/pitch)-1]) translate([-len/2 + pitch/2 + i*pitch, 0, 0]) { rotate([90,0,0]) linear_extrude(rel) difference(){ scale([1,1.35]) circle(r=2.1,$fn=24); scale([1,1.35]) circle(r=1.3,$fn=24);} translate([pitch/2,0,-2.6]) rotate([90,0,0]) linear_extrude(rel) square([0.9,5.2],center=true); } }
+module leaf2d(l=7, w=2.6){ scale([l/2, w/2]) circle(r=1,$fn=24); }
+module laurel(r=23, n=16){ for (i=[0:n-1]) rotate([0,0,i*360/n]) translate([r+0.8,0,0]) rotate([0,0,62]) linear_extrude(rel) leaf2d(6.8,2.0); for (i=[0:n-1]) rotate([0,0,i*360/n+360/n/2]) translate([r-1.6,0,0]) rotate([0,0,118]) linear_extrude(rel) leaf2d(5.6,1.7); linear_extrude(rel) difference(){ circle(r=r-0.2,$fn=96); circle(r=r-1.0,$fn=96);} }
+module scroll2d(turns=1.6, a=2.2, b=1.1){ // voluta (espiral de Arquimedes) como faixa
+  pts=[for (t=[0:6:turns*360]) let(rr=a+b*t/360*2) [rr*cos(t), rr*sin(t)]];
+  for (i=[0:len(pts)-2]) hull(){ translate(pts[i]) circle(r=0.7,$fn=10); translate(pts[i+1]) circle(r=0.7,$fn=10); }
+  translate(pts[len(pts)-1]) circle(r=1.1,$fn=12);
+}
+module acanthus_corner(){ linear_extrude(rel) { scroll2d(); rotate(180) translate([-7,0]) scale(0.7) scroll2d(); } }
+module pilaster(hgt){ translate([-3,-rel,0]) cube([6, rel, hgt-9]); translate([-4,-rel,hgt-9]) cube([8, rel+0.3, 3]); translate([-3.5,-rel,hgt-6]) cube([7, rel+0.6, 1.5]); }
+module medallion(){ rotate([90,0,0]) linear_extrude(rel) { difference(){ scale([1,1.4]) circle(r=6,$fn=48); scale([1,1.4]) circle(r=5,$fn=48);} rosette2d(4,8); } }
+
 module body_deco() {
   C(0) body_base();
   if (STYLE==0) {
@@ -64,6 +81,24 @@ module body_deco() {
     C(1) translate([0, W/2+rel/2, 40]) rotate([90,0,0]) linear_extrude(rel) frame2d(140, 72);
     for (s=[-1,1]) C(1) translate([s*62, -W/2-3-rel/2, 40]) rotate([90,0,0]) linear_extrude(rel) frame2d(14, 72);
     for (sx=[-1,1], sy=[-1,1]) C(1) translate([sx*(L/2-rc), sy*(W/2-rc), 0]) rotate([0,0,atan2(sy,sx)]) translate([rc-0.2,0,0]) cylinder(d=1.2, h=H, $fn=12);
+  } else if (STYLE==2) {
+    // laterais: grade de rosetas sob as alças + moldura; cornija com dentículos; óvulos na base
+    for (s=[-1,1]) translate([s*(L/2+rel/2), 0, 0]) rotate([0,0,s>0?90:-90]) {
+      C(1) translate([0,-rel/2,0]) rosette_grid(84, 44, 14, 4.6);
+      C(1) translate([0, -rel/2, 30]) rotate([90,0,0]) linear_extrude(rel) frame2d(92, 52, 1.4);
+      C(1) translate([0, -1.0, H-6]) dentils(92, 6, 3, 4);
+      C(1) translate([0, -rel/2, 6]) egg_dart(90, 7);
+    }
+    // traseira: rosetas + moldura + dentículos + óvulos
+    C(1) translate([0, W/2+rel/2, 0]) rotate([0,0,180]) translate([0,-rel/2,0]) rosette_grid(130, 60, 14, 4.6);
+    C(1) translate([0, W/2+rel/2-rel/2, 40]) rotate([90,0,0]) linear_extrude(rel) frame2d(140, 72, 1.4);
+    C(1) translate([0, W/2+1.0, H-6]) rotate([0,0,180]) dentils(140, 6, 3, 4);
+    C(1) translate([0, W/2+rel/2, 6]) rotate([0,0,180]) translate([0,-rel/2,0]) egg_dart(138, 7);
+    // frente: dentículos no alto e medalhões ovais nas margens
+    C(1) translate([0, -W/2-3-1.0, H-6]) dentils(140, 6, 3, 4);
+    for (s=[-1,1]) C(1) translate([s*62, -W/2-3-rel/2, 40]) rotate([0,0,180]) medallion();
+    // pilastras nas arestas
+    for (sx=[-1,1], sy=[-1,1]) C(1) translate([sx*(L/2-rc), sy*(W/2-rc), 0]) rotate([0,0,atan2(sy,sx)+45]) translate([rc-0.5,0,0]) rotate([0,0,90]) pilaster(H);
   } else {
     // laterais: arcada de lancetas com um olho fechado em cada nicho (abaixo das alças)
     for (s=[-1,1]) translate([s*(L/2+rel/2), 0, 0]) rotate([0,0,s>0?90:-90]) {
@@ -82,7 +117,7 @@ module body_deco() {
     C(1) translate([0,0,0]) plinth(L, W, 5, 0.9);
   }
   // volutas nas pontas das alças (anéis pequenos)
-  if (STYLE==0) for (s=[-1,1], y=[-35+6.5, 35-6.5]) C(1) translate([s*(L/2+26+6.5), y, H-16-6.5]) rotate([0,90,0]) difference(){ cylinder(d=15,h=4,center=true,$fn=40); cylinder(d=9,h=6,center=true,$fn=40); }
+  if (STYLE!=1) for (s=[-1,1], y=[-35+6.5, 35-6.5]) C(1) translate([s*(L/2+26+6.5), y, H-16-6.5]) rotate([0,90,0]) difference(){ cylinder(d=15,h=4,center=true,$fn=40); cylinder(d=9,h=6,center=true,$fn=40); }
 }
 module lid_deco() {
   difference() {
@@ -93,6 +128,10 @@ module lid_deco() {
     translate([0,0,lid_t-eng]) linear_extrude(eng+1) frame2d(L-10, W-10, 1.0);
   }
   // versão pintada: desenha o ouro dentro das gravações
+  if (STYLE==2) {
+    C(1) translate([0,18,lid_t]) laurel(22.5, 22);
+    for (sx=[-1,1], sy=[-1,1]) C(1) translate([sx*(L/2-13), sy*(W/2-12), lid_t]) rotate([0,0,atan2(sy,sx)+180]) acanthus_corner();
+  }
   if (STYLE==1) {
     C(1) translate([0,18,lid_t]) linear_extrude(rel) trefoil_crown(22.5, 14);
     for (sx=[-1,1], sy=[-1,1]) C(1) translate([sx*(L/2-9), sy*(W/2-9), lid_t]) pinnacle(9, 5);
