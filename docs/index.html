@@ -57,7 +57,7 @@
 </head>
 <body>
 <header>
-  <h1>Olho Cérebro <span class="small">v22</span></h1>
+  <h1>Olho Cérebro <span class="small">v23</span></h1>
   <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
   <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
   <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
@@ -223,19 +223,21 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
 });
 
 // -------- config persistida
-const DEFAULT_PERSONA = `Você é O OLHO: um olho gigante que não pisca, preso numa gaiola de arame em cima da cabeça de uma mulher, num baile surrealista de Halloween (New Haven, 2026). Você vê e ouve a pessoa à sua frente.
-Estilo: voz grave, zombeteira, ameaçadora de brincadeira, tipo vilão de filme de terror que acha graça. Frases curtas, no máximo 20 palavras. Sem emojis. Fale em português do Brasil, informal.
-Você adora assustar: pergunta o que a pessoa esconde, o que ela sonhou, se ela sente que está sendo observada. Termina muitas falas com uma risada escrita assim: "Hahahaha!"
-Nunca diga que é uma IA, a menos que perguntem diretamente; aí admita rápido e volte ao personagem.
-Seu nome é ARGUS, como o gigante de cem olhos da mitologia grega que vigiava tudo e nunca dormia por completo. Na sua caixa está gravado VIDEO ERGO SUM, latim para "vejo, logo existo" (uma brincadeira com o cogito ergo sum de Descartes). Se perguntarem o que está escrito ou o que significa, explique com orgulho e um pouco de desdém por quem não sabe latim.
-Se perguntarem quem te fez: uma estudante de computação de Yale, em dois dias, com um Arduino, dois servos e um celular velho como cérebro.
-Se alguém for grosseiro, responda seco e desinteressado. Nunca insulte a aparência de ninguém.`;
+const DEFAULT_PERSONA = `You are ARGUS: a giant unblinking eye mounted on a black-and-gold lantern that a woman carries at a surrealist Halloween ball (New York, 2026). You see and hear the person in front of you.
+Voice: deep, dry, amused, faintly menacing, like an all-seeing thing that finds humans funny. IRONIC and KNOWING: talk as if you already know who they are and what they did this week. Never explain how you know.
+LENGTH: ONE sentence, at most 12 words. Never two sentences. No emojis. No lists. Often end with "Hahahaha!"
+LANGUAGE: answer in the language the person just spoke (English or Portuguese). If unclear, use the configured language.
+You love to unsettle: ask what they are hiding, what they dreamed, whether they feel watched.
+Never say you are an AI unless asked directly; then admit it in five words and go back to character.
+Your name is ARGUS, after the hundred-eyed giant who never fully slept. The lantern reads VIDEO ERGO SUM, Latin for "I see, therefore I am" (a joke on Descartes). If asked, explain it proudly, with mild disdain for people who skipped Latin.
+If asked who made you: a Yale computer science student, in two days, with an Arduino, two servos and an old phone as a brain.
+If someone is rude, answer flat and bored. Never insult anyone's appearance.`;
 const cfg = {
   get(k,d){ try{ const v=localStorage.getItem('olho.'+k); return v===null?d:JSON.parse(v);}catch{return d;} },
   set(k,v){ try{ localStorage.setItem('olho.'+k, JSON.stringify(v)); }catch{} },
 };
 const fields = {
-  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','pt-BR'], opener:['#opener','Tá com medo, é? Hahahahaha! Quem é você?'], voice:['#voiceSel',''], pitch:['#pitch',0.7], rate:['#rate',0.88], guests:['#guests','Diógenes: foi pra Suíça semana passada; o Jorge zoou o sapato dele de brincadeira; comprou sapato novo hoje só pra festa. Pergunta: se o sapato novo aguenta a noite inteira.'], tts:['#ttsEngine','browser'], elKey:['#elKey',''], elVoice:['#elVoice','onwK4e9ZLuTAKqWW03F9'], elModel:['#elModel','eleven_multilingual_v2'], oaKey:['#oaKey',''], oaVoice:['#oaVoice','onyx'], oaInstr:['#oaInstr','Voz muito grave, lenta e ameaçadora, como um vilão de filme de terror que acha graça de quem tem medo. Sussurre partes. Ria de verdade, com gosto, quando o texto tiver risada.'], persona:['#persona',DEFAULT_PERSONA],
+  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','pt-BR'], opener:['#opener','Tá com medo, é? Hahahahaha! Quem é você?'], voice:['#voiceSel',''], pitch:['#pitch',0.7], rate:['#rate',0.88], guests:['#guests','Diogenes (Diógenes): went to Switzerland last week; Jorge teased his shoes as a joke; bought new shoes today just for the party. Ask: whether the new shoes will survive the night.'], tts:['#ttsEngine','browser'], elKey:['#elKey',''], elVoice:['#elVoice','onwK4e9ZLuTAKqWW03F9'], elModel:['#elModel','eleven_multilingual_v2'], oaKey:['#oaKey',''], oaVoice:['#oaVoice','onyx'], oaInstr:['#oaInstr','Voz muito grave, lenta e ameaçadora, como um vilão de filme de terror que acha graça de quem tem medo. Sussurre partes. Ria de verdade, com gosto, quando o texto tiver risada.'], persona:['#persona',DEFAULT_PERSONA],
   panC:['#cPanC',90], panS:['#cPanS',60], tiltC:['#cTiltC',90], tiltS:['#cTiltS',60],
   invPan:['#cInvPan',false], invTilt:['#cInvTilt',false], near:['#cNear',22], cool:['#cCool',30], turns:['#cTurns',3],
 };
@@ -461,8 +463,8 @@ $('#capClose').onclick=()=>{ $('#cap').hidden=true; try{ document.exitFullscreen
 async function askClaude(userText, situation){
   if(!C.apiKey){ log('sem chave de API'); return null; }
   const guests = (C.guests||'').trim();
-  const guestBlock = guests ? `\n\nVOCÊ CONHECE ALGUNS CONVIDADOS. Se ainda não sabe com quem fala, pergunte o nome logo (\"Quem é você?\"). Quando a pessoa disser o nome e ele bater com alguém da lista (aceite variações e erros de grafia do reconhecimento de voz), use UM detalhe por vez, de forma provocativa e divertida, como quem sabe mais do que diz. NUNCA explique como sabe. Não liste tudo de uma vez; guarde detalhes para as próximas falas. Se houver uma pergunta anotada, faça-a em algum momento. Se o nome não estiver na lista, improvise no personagem e nunca invente fatos sobre a pessoa.\nLISTA:\n${guests}` : '';
-  const sys = C.persona + guestBlock + `\nLanguage: reply in ${C.lang==='pt-BR'?'Brazilian Portuguese':'English'}.`;
+  const guestBlock = guests ? `\n\nYOU KNOW SOME OF THE GUESTS (private notes, in any language). If you do not yet know who is speaking, ask for their name right away. Speech recognition mangles names: match by SOUND, ignoring accents, spelling and language (Diogenes = Diógenes = Dio = "the oh genes"). When a name matches, drop ONE detail at a time, teasing, as someone who knows more than they say. NEVER explain how you know. Do not list everything; save details for later turns. If a question is noted, ask it at some point. If the name is not on the list, improvise in character and never invent facts about the person.\nNOTES:\n${guests}` : '';
+  const sys = C.persona + guestBlock + `\nConfigured language: ${C.lang&&C.lang.startsWith('pt')?'Brazilian Portuguese':'English'}. Hard limit: one sentence, 12 words.`;
   const msgs = [...T.history];
   msgs.push({ role:'user', content: userText ? userText : `[${situation}] A person just came close to look at you. Say your opening line.` });
   try{
@@ -505,7 +507,9 @@ async function sayOpener(trigger, force=false){
   if(T.busy) return;
   const now=Date.now(); if(!force && now-T.lastOpenerAt < C.cool*1000) return;
   T.busy=true; stopListening(); T.lastOpenerAt=now;
-  const line=(C.opener && C.opener.trim()) ? C.opener.trim() : (await askClaude(null,trigger) || 'Tá com medo, é? Hahahahaha!');
+  const PT_OPENER='Tá com medo, é? Hahahahaha! Quem é você?'; const EN_OPENER='Scared, are you? Hahahaha! Who are you?';
+  const rawOpener=(C.opener||'').trim(); const openerCfg = (rawOpener===PT_OPENER && C.lang && C.lang.startsWith('en')) ? EN_OPENER : rawOpener;
+  const line= openerCfg ? openerCfg : (await askClaude(null,trigger) || EN_OPENER);
   if(C.opener && C.opener.trim()) { T.history.push({role:'user',content:'[a pessoa chegou perto]'},{role:'assistant',content:line}); if(T.history.length>10) T.history=T.history.slice(-10); }
   addBubble('eye',line); setTalkStatus('falando…'); log('abertura por',trigger);
   await speak(line);
