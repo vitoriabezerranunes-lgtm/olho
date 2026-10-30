@@ -1,7 +1,7 @@
 // TRAVA DO CELULAR: barrinha que encaixa por pressão nas cabeças dos 2 pinos do berço (mesma altura),
 // passando por cima da traseira do celular. Imprime deitada. Precisa de 2 (uma por par de pinos: z=45 e z=90).
 ph_w = 80; rail = 4; slot_w = ph_w + 0.6;
-peg_x = slot_w/2 + rail + 7.3;         // centro da cabeça do pino (haste 6 + meia cabeça)
+peg_x = slot_w/2 + rail + 3;           // centro dos pinos (nas orelhas do berço)
 span = 2*peg_x + 16;                   // sobra de 8 mm em cada ponta
 t = 2.4; w = 16;
 $fn = 48;
