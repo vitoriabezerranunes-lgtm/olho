@@ -51,7 +51,7 @@
 </head>
 <body>
 <header>
-  <h1>Olho Cérebro <span class="small">v16</span></h1>
+  <h1>Olho Cérebro <span class="small">v17</span></h1>
   <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
   <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
   <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
@@ -163,7 +163,10 @@
     <label>tom <span id="vPitch">0.7</span> (menor = mais grave; abaixo de 0.5 costuma embolar)</label><input type="range" id="pitch" min="0.3" max="1.3" step="0.05" value="0.7">
     <label>velocidade <span id="vRate">0.88</span></label><input type="range" id="rate" min="0.5" max="1.3" step="0.02" value="0.88">
     <div class="row" style="margin-top:8px"><button class="b" id="bVoiceTest">Ouvir essa voz</button></div>
-    <label>Frase de abertura fixa (vazio = o Claude inventa)</label><input type="text" id="opener" placeholder="Tá com medo, é? Ha, ha, ha, ha.">
+    <label>Frase de abertura fixa (vazio = o Claude inventa)</label><input type="text" id="opener" placeholder="Tá com medo, é? Hahahahaha! Quem é você?">
+    <label>Convidados que o olho "conhece" (uma linha por pessoa: Nome: fatos; pergunta que ele deve fazer). Fica só neste aparelho.</label>
+    <textarea id="guests" placeholder="Fulano: viajou semana passada; comprou sapato novo pra festa. Pergunta: se o sapato aguenta a noite.
+Beltrana: dona da festa. Pergunta: qual foi o pior convidado até agora."></textarea>
     <label>Personalidade do olho (system prompt)</label>
     <textarea id="persona"></textarea>
     <div class="row" style="margin-top:8px"><button class="b" id="bPersonaReset">Restaurar texto padrão</button><button class="b p" id="bSave">Salvar</button></div>
@@ -218,7 +221,7 @@ const cfg = {
   set(k,v){ try{ localStorage.setItem('olho.'+k, JSON.stringify(v)); }catch{} },
 };
 const fields = {
-  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','pt-BR'], opener:['#opener','Tá com medo, é? Hahahahaha!'], voice:['#voiceSel',''], pitch:['#pitch',0.7], rate:['#rate',0.88], tts:['#ttsEngine','browser'], elKey:['#elKey',''], elVoice:['#elVoice','onwK4e9ZLuTAKqWW03F9'], elModel:['#elModel','eleven_multilingual_v2'], oaKey:['#oaKey',''], oaVoice:['#oaVoice','onyx'], oaInstr:['#oaInstr','Voz muito grave, lenta e ameaçadora, como um vilão de filme de terror que acha graça de quem tem medo. Sussurre partes. Ria de verdade, com gosto, quando o texto tiver risada.'], persona:['#persona',DEFAULT_PERSONA],
+  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','pt-BR'], opener:['#opener','Tá com medo, é? Hahahahaha! Quem é você?'], voice:['#voiceSel',''], pitch:['#pitch',0.7], rate:['#rate',0.88], guests:['#guests',''], tts:['#ttsEngine','browser'], elKey:['#elKey',''], elVoice:['#elVoice','onwK4e9ZLuTAKqWW03F9'], elModel:['#elModel','eleven_multilingual_v2'], oaKey:['#oaKey',''], oaVoice:['#oaVoice','onyx'], oaInstr:['#oaInstr','Voz muito grave, lenta e ameaçadora, como um vilão de filme de terror que acha graça de quem tem medo. Sussurre partes. Ria de verdade, com gosto, quando o texto tiver risada.'], persona:['#persona',DEFAULT_PERSONA],
   panC:['#cPanC',90], panS:['#cPanS',60], tiltC:['#cTiltC',90], tiltS:['#cTiltS',60],
   invPan:['#cInvPan',false], invTilt:['#cInvTilt',false], near:['#cNear',22], cool:['#cCool',30], turns:['#cTurns',3],
 };
@@ -367,6 +370,7 @@ function loopVision(){
     S.faceNear=near;
   } else {
     if(ts-V.lastFaceAt>1500){ S.face=null; V.ema=null; S.faceNear=false; }
+    if(ts-V.lastFaceAt>60000 && T.history.length){ T.history=[]; log('ninguém há 60 s: conversa zerada'); }
   }
   drawEye();
 }
@@ -440,7 +444,9 @@ function listen(ms=6000){
 function addBubble(who,text){ const d=document.createElement('div'); d.className='bubble '+who; d.textContent=(who==='eye'?'👁 ':'🗣 ')+text; $('#chat').prepend(d); }
 async function askClaude(userText, situation){
   if(!C.apiKey){ log('sem chave de API'); return null; }
-  const sys = C.persona + `\nLanguage: reply in ${C.lang==='pt-BR'?'Brazilian Portuguese':'English'}.`;
+  const guests = (C.guests||'').trim();
+  const guestBlock = guests ? `\n\nVOCÊ CONHECE ALGUNS CONVIDADOS. Se ainda não sabe com quem fala, pergunte o nome logo (\"Quem é você?\"). Quando a pessoa disser o nome e ele bater com alguém da lista (aceite variações e erros de grafia do reconhecimento de voz), use UM detalhe por vez, de forma provocativa e divertida, como quem sabe mais do que diz. NUNCA explique como sabe. Não liste tudo de uma vez; guarde detalhes para as próximas falas. Se houver uma pergunta anotada, faça-a em algum momento. Se o nome não estiver na lista, improvise no personagem e nunca invente fatos sobre a pessoa.\nLISTA:\n${guests}` : '';
+  const sys = C.persona + guestBlock + `\nLanguage: reply in ${C.lang==='pt-BR'?'Brazilian Portuguese':'English'}.`;
   const msgs = [...T.history];
   msgs.push({ role:'user', content: userText ? userText : `[${situation}] A person just came close to look at you. Say your opening line.` });
   try{
