@@ -1,5 +1,5 @@
 /*
-  OLHO — firmware do Arduino Uno (Halloween 2026) — v8
+  OLHO — firmware do Arduino Uno (Halloween 2026) — v9
   ------------------------------------------------
   Um olho gigante num pan-tilt de 2 servos, com dois sensores
   ultrassônicos HC-SR04 e um módulo Bluetooth BLE HM-10.
@@ -212,10 +212,13 @@ void handleLine(char* line) {
   switch (line[0]) {
     case 'P': case 'p': {
       // formato exigido: P<pan>,T<tilt>;  (o ';' prova que a linha chegou inteira)
-      int pan = 0, tilt = 0;
-      int n = sscanf(line + 1, "%d,%*[Tt]%d", &pan, &tilt);
-      bool complete = strchr(line, ';') != NULL;
-      if (n != 2 || !complete) return;                       // cortada ou malformada: ignora
+      // leitura manual (sem sscanf, que não funciona bem no AVR)
+      char* comma = strchr(line, ',');
+      char* semi  = strchr(line, ';');
+      if (!comma || !semi) return;                            // cortada ou malformada: ignora
+      char* t = comma + 1; if (*t == 'T' || *t == 't') t++; else return;
+      if (line[1] < '0' || line[1] > '9' || *t < '0' || *t > '9') return;
+      int pan = atoi(line + 1), tilt = atoi(t);
       if (pan < 20 || pan > 160 || tilt < 40 || tilt > 140) return; // valor implausível: ignora
       mode = REMOTE; lastRemote = millis();
       setTarget(pan, tilt, 2.5);
@@ -250,7 +253,7 @@ void setup() {
   curPan = tgtPan = PAN_CENTER; curTilt = tgtTilt = TILT_CENTER;
   panServo.write(PAN_CENTER); tiltServo.write(TILT_CENTER);
   delay(600);
-  Serial.println(F("OLHO v8 pronto (P<pan>,T<tilt>; com ponto-e-virgula). Comandos: P<pan>,T<tilt>  C  A  R0/R1  W0/W1  Z"));
+  Serial.println(F("OLHO v9 pronto (P<pan>,T<tilt>; com ponto-e-virgula). Comandos: P<pan>,T<tilt>  C  A  R0/R1  W0/W1  Z"));
 }
 
 void loop() {
