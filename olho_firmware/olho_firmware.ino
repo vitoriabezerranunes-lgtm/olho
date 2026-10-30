@@ -1,5 +1,5 @@
 /*
-  OLHO — firmware do Arduino Uno (Halloween 2026) — v7
+  OLHO — firmware do Arduino Uno (Halloween 2026) — v8
   ------------------------------------------------
   Um olho gigante num pan-tilt de 2 servos, com dois sensores
   ultrassônicos HC-SR04 e um módulo Bluetooth BLE HM-10.
@@ -11,7 +11,7 @@
               30 s sem receber nada, volta sozinho pro modo AUTO.
 
   Comandos (mesmos por USB Serial e por BLE, uma linha cada):
-    P<pan>,T<tilt>   ex: P120,T85   -> vai pra esse ângulo (entra em REMOTO)
+    P<pan>,T<tilt>;  ex: P120,T85;  -> vai pra esse ângulo (entra em REMOTO). O ';' é obrigatório.
     C                -> centro
     A                -> força modo AUTO
     R0 / R1          -> reação ao ultrassom desligada / ligada
@@ -207,15 +207,18 @@ void handleLine(char* line) {
   if (line[0] == 0) return;
   Serial.print(F("rx:")); Serial.println(line);   // eco pra depuração: tudo que chega aparece no Serial Monitor
   // ignora lixo: comando tem que começar com letra conhecida e, no caso de P, ter dígito logo depois
-  if (line[0] == 'P' || line[0] == 'p') { if (line[1] < '0' || line[1] > '9') return; }
+  if (line[0] == 'P' || line[0] == 'p') { /* validado no case P */ }
   else if (line[1] != 0 && !(line[0]=='R'||line[0]=='r'||line[0]=='W'||line[0]=='w')) return;
   switch (line[0]) {
     case 'P': case 'p': {
-      int pan = atoi(line + 1);
-      char* t = strchr(line, 'T'); if (!t) t = strchr(line, 't');
-      int tilt = t ? atoi(t + 1) : TILT_CENTER;
+      // formato exigido: P<pan>,T<tilt>;  (o ';' prova que a linha chegou inteira)
+      int pan = 0, tilt = 0;
+      int n = sscanf(line + 1, "%d,%*[Tt]%d", &pan, &tilt);
+      bool complete = strchr(line, ';') != NULL;
+      if (n != 2 || !complete) return;                       // cortada ou malformada: ignora
+      if (pan < 20 || pan > 160 || tilt < 40 || tilt > 140) return; // valor implausível: ignora
       mode = REMOTE; lastRemote = millis();
-      setTarget(pan, tilt, 2.5);           // mais suave que sacada: é rastreio
+      setTarget(pan, tilt, 2.5);
       break;
     }
     case 'C': case 'c': setTarget(PAN_CENTER, TILT_CENTER, 6.0); mode = REMOTE; lastRemote = millis(); break;
@@ -247,7 +250,7 @@ void setup() {
   curPan = tgtPan = PAN_CENTER; curTilt = tgtTilt = TILT_CENTER;
   panServo.write(PAN_CENTER); tiltServo.write(TILT_CENTER);
   delay(600);
-  Serial.println(F("OLHO v7 pronto (suave; sem sensor; R1 liga). Comandos: P<pan>,T<tilt>  C  A  R0/R1  W0/W1  Z"));
+  Serial.println(F("OLHO v8 pronto (P<pan>,T<tilt>; com ponto-e-virgula). Comandos: P<pan>,T<tilt>  C  A  R0/R1  W0/W1  Z"));
 }
 
 void loop() {
@@ -276,6 +279,6 @@ void loop() {
   if (now - tStep >= 10) { tStep = now; stepServos(); }
 
   // relatório menos frequente: a SoftwareSerial não ouve enquanto fala, então falar menos = perder menos comandos
-  unsigned long reportEvery = (mode == REMOTE) ? 1000 : 500;
+  unsigned long reportEvery = (mode == REMOTE) ? 2000 : 500;
   if (now - tReport >= reportEvery) { tReport = now; reportStatus(); }
 }

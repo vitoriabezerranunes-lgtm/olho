@@ -51,7 +51,7 @@
 </head>
 <body>
 <header>
-  <h1>Olho Cérebro <span class="small">v8</span></h1>
+  <h1>Olho Cérebro <span class="small">v9</span></h1>
   <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
   <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
   <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
@@ -283,7 +283,7 @@ function sendAngles(p,t,force=false){
   // inversão vale pra tudo (sliders, centro, rastreio): a tela mostra a intenção, o Uno recebe o ângulo espelhado
   const sp = C.invPan ? Math.round(2*C.panC - p) : p;
   const st = C.invTilt ? Math.round(2*C.tiltC - t) : t;
-  bleSend(`P${sp},T${st}`);
+  bleSend(`P${sp},T${st};`); // ';' no fim: o Uno descarta mensagens cortadas
 }
 $('#bBle').onclick=bleConnect; $('#bBleOff').onclick=bleDisconnect;
 // segurar posição manual: o Uno volta pro automático se ficar 1,5 s sem mensagem, então reenvia a cada 600 ms
