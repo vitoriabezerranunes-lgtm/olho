@@ -2,8 +2,8 @@ include <params.scad>
 // TAMPA: placa com aba interna (encaixe por atrito), 4 rasgos pro pan-tilt
 // (aceita bases de 24-34 x 20-30 mm), rasgo pros fios atrás do pan-tilt,
 // 2 furos pra velcro/parafuso de segurança.
-pt_x = 27; pt_y = 31;   // MEDIDO com régua nos furos da base (33 x 37 mm): 27 mm lado a lado, 31 mm no outro sentido
-tol = 3.5;              // folga em cada sentido (rasgos em cruz): aceita 23x27 ou 27x23, e erro de ate ~2 mm
+pt_x = 24; pt_y = 28;   // base 33 x 37 mm; medidas dela variaram 21-27 x 25-31 mm c-c (borda a borda deu 24 x 28 => 21 x 25 c-c)
+tol = 4;                // rasgos em cruz de +-4 mm: cobrem 20-28 x 24-32 mm, qualquer uma das medidas encaixa
 module lid_base() {
 difference() {
   union() {
