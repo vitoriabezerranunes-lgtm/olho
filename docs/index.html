@@ -51,7 +51,7 @@
 </head>
 <body>
 <header>
-  <h1>Olho Cérebro <span class="small">v13</span></h1>
+  <h1>Olho Cérebro <span class="small">v14</span></h1>
   <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
   <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
   <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
@@ -124,7 +124,7 @@
       <button class="b" id="bListen">Ouvir 1 vez</button>
       <button class="b" id="bTestTTS">Testar voz</button>
     </div>
-    <div class="small" style="margin-top:8px">Dispara quando um rosto chega perto (câmera) ou quando o Uno manda <code>E:perto</code>. Fala, ouve, responde, até acabar a conversa. Depois espera o cooldown.</div>
+    <div class="small" style="margin-top:8px">Com a conversa ligada o microfone fica sempre aberto. Ele só responde quando a câmera está vendo um rosto, e solta a frase de abertura quando alguém chega perto (no máximo uma vez a cada 30 s). Falas de uma palavra são ignoradas.</div>
   </div>
   <div class="card"><h2>Conversa</h2><div id="chat"></div></div>
 </section>
@@ -177,8 +177,8 @@
     <label><input type="checkbox" id="cInvPan"> inverter pan</label>
     <label><input type="checkbox" id="cInvTilt"> inverter tilt</label>
     <label>rosto "perto" quando a largura passa de <span id="vNear">22</span> % da imagem</label><input type="range" id="cNear" min="10" max="50" value="22">
-    <label>cooldown entre conversas <span id="vCool">25</span> s</label><input type="range" id="cCool" min="5" max="120" value="25">
-    <label>máximo de trocas por conversa <span id="vTurns">3</span></label><input type="range" id="cTurns" min="1" max="8" value="3">
+    <label>intervalo mínimo entre "aberturas" <span id="vCool">30</span> s</label><input type="range" id="cCool" min="5" max="120" value="30">
+    <label hidden>máximo de trocas <span id="vTurns">3</span></label><input hidden type="range" id="cTurns" min="1" max="8" value="3">
   </div>
 </section>
 
@@ -220,7 +220,7 @@ const cfg = {
 const fields = {
   apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','pt-BR'], opener:['#opener','Tá com medo, é? Hahahahaha!'], voice:['#voiceSel',''], pitch:['#pitch',0.7], rate:['#rate',0.88], tts:['#ttsEngine','browser'], elKey:['#elKey',''], elVoice:['#elVoice','onwK4e9ZLuTAKqWW03F9'], elModel:['#elModel','eleven_multilingual_v2'], oaKey:['#oaKey',''], oaVoice:['#oaVoice','onyx'], oaInstr:['#oaInstr','Voz muito grave, lenta e ameaçadora, como um vilão de filme de terror que acha graça de quem tem medo. Sussurre partes. Ria de verdade, com gosto, quando o texto tiver risada.'], persona:['#persona',DEFAULT_PERSONA],
   panC:['#cPanC',90], panS:['#cPanS',60], tiltC:['#cTiltC',90], tiltS:['#cTiltS',60],
-  invPan:['#cInvPan',false], invTilt:['#cInvTilt',false], near:['#cNear',22], cool:['#cCool',25], turns:['#cTurns',3],
+  invPan:['#cInvPan',false], invTilt:['#cInvTilt',false], near:['#cNear',22], cool:['#cCool',30], turns:['#cTurns',3],
 };
 const C = {};
 function loadCfg(){
@@ -445,7 +445,7 @@ async function askClaude(userText, situation){
   msgs.push({ role:'user', content: userText ? userText : `[${situation}] A person just came close to look at you. Say your opening line.` });
   try{
     const r = await fetch('https://api.anthropic.com/v1/messages',{ method:'POST', headers:{ 'content-type':'application/json', 'x-api-key':C.apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model:C.model, max_tokens:90, system:sys, messages:msgs }) });
+      body: JSON.stringify({ model:C.model, max_tokens:60, system:sys, messages:msgs }) });
     if(!r.ok){ log('Claude HTTP', r.status, (await r.text()).slice(0,200)); return null; }
     const j = await r.json(); const text = (j.content||[]).map(c=>c.text||'').join(' ').trim();
     T.history.push(msgs[msgs.length-1], { role:'assistant', content:text });
@@ -453,30 +453,46 @@ async function askClaude(userText, situation){
     return text;
   }catch(e){ log('Claude erro:', e.message||e); return null; }
 }
-async function conversation(trigger){
-  T.busy=true; $('#kTalk').textContent='falando…'; log('conversa iniciada por', trigger);
-  T.history=[];
-  let line = (C.opener && C.opener.trim()) ? C.opener.trim() : (await askClaude(null, trigger) || (C.lang==='pt-BR'?'Tá com medo, é? Ha, ha, ha, ha.':'I saw you before you saw me.'));
-  if(C.opener && C.opener.trim()) T.history.push({role:'user',content:'[a pessoa chegou perto]'},{role:'assistant',content:line});
-  addBubble('eye',line); await speak(line);
-  for(let turn=0; turn<C.turns; turn++){
-    const heard = await listen(6000);
-    if(!heard){ log('silêncio, encerrando'); break; }
-    addBubble('me',heard); $('#kTalk').textContent='pensando…';
-    const reply = await askClaude(heard,'reply'); if(!reply) break;
-    addBubble('eye',reply); $('#kTalk').textContent='falando…'; await speak(reply);
-  }
-  T.busy=false; S.lastCool=Date.now(); $('#kTalk').textContent='cooldown';
-  setTimeout(()=>{ if(!T.busy) $('#kTalk').textContent='parada'; }, C.cool*1000);
+// ===== sempre ouvindo; responde só quando há um rosto na câmera =====
+T.rec=null; T.listening=false; T.lastOpenerAt=0;
+function setTalkStatus(t){ $('#kTalk').textContent=t; }
+function startListening(){
+  if(!T.on || T.busy || T.listening) return;
+  if(!SR){ log('sem reconhecimento de fala neste navegador'); return; }
+  const r=new SR(); r.lang=C.lang; r.interimResults=false; r.maxAlternatives=1; r.continuous=false;
+  T.rec=r; T.listening=true; setTalkStatus(S.face?'ouvindo (vendo alguém)':'ouvindo (ninguém na frente)');
+  r.onresult=e=>{ const t=e.results[0][0].transcript.trim(); handleHeard(t); };
+  r.onerror=e=>{ if(e.error!=='no-speech' && e.error!=='aborted') log('ouvir erro:', e.error); if(e.error==='not-allowed'){ T.on=false; paintTalkButton(); } };
+  r.onend=()=>{ T.listening=false; if(T.on && !T.busy) setTimeout(startListening,150); };
+  try{ r.start(); }catch(e){ T.listening=false; setTimeout(startListening,500); }
 }
-function maybeStartTalk(trigger){
-  if(!T.on || T.busy) return;
-  if(Date.now()-S.lastCool < C.cool*1000) return;
-  conversation(trigger);
+function stopListening(){ T.listening=false; try{ T.rec?.abort(); }catch{} }
+async function handleHeard(text){
+  if(!text) return;
+  addBubble('me',text);
+  if(text.split(/\s+/).length<2){ log('ignorado (curto):',text); return; }
+  if(!S.face){ log('ouvi, mas ninguém na frente:',text); return; }
+  T.busy=true; stopListening(); setTalkStatus('pensando…');
+  const reply=await askClaude(text,'reply');
+  if(reply){ addBubble('eye',reply); setTalkStatus('falando…'); await speak(reply); }
+  T.busy=false; startListening();
 }
-$('#bTalkOn').onclick=()=>{ T.on=!T.on; $('#bTalkOn').textContent=T.on?'Conversa ligada':'Ligar conversa'; $('#bTalkOn').classList.toggle('p',!T.on); if(T.on) speechSynthesis.getVoices(); };
-$('#bSay').onclick=()=>{ if(!T.busy) conversation('botão'); };
-$('#bListen').onclick=async()=>{ const h=await listen(6000); log('ouvi:', h); if(h) addBubble('me',h); $('#kTalk').textContent='parada'; };
+async function sayOpener(trigger, force=false){
+  if(!T.on && !force) return;
+  if(T.busy) return;
+  const now=Date.now(); if(!force && now-T.lastOpenerAt < C.cool*1000) return;
+  T.busy=true; stopListening(); T.lastOpenerAt=now;
+  const line=(C.opener && C.opener.trim()) ? C.opener.trim() : (await askClaude(null,trigger) || 'Tá com medo, é? Hahahahaha!');
+  if(C.opener && C.opener.trim()) { T.history.push({role:'user',content:'[a pessoa chegou perto]'},{role:'assistant',content:line}); if(T.history.length>10) T.history=T.history.slice(-10); }
+  addBubble('eye',line); setTalkStatus('falando…'); log('abertura por',trigger);
+  await speak(line);
+  T.busy=false; startListening();
+}
+function maybeStartTalk(trigger){ sayOpener(trigger,false); }
+function paintTalkButton(){ $('#bTalkOn').textContent=T.on?'Conversa ligada (sempre ouvindo)':'Ligar conversa'; $('#bTalkOn').classList.toggle('p',!T.on); }
+$('#bTalkOn').onclick=()=>{ T.on=!T.on; paintTalkButton(); if(T.on){ speechSynthesis.getVoices(); startListening(); } else { stopListening(); setTalkStatus('parada'); } };
+$('#bSay').onclick=()=>sayOpener('botão',true);
+$('#bListen').onclick=async()=>{ const wasOn=T.on; T.on=false; stopListening(); const h=await listen(6000); log('ouvi:', h); if(h) addBubble('me',h); T.on=wasOn; if(T.on) startListening(); else setTalkStatus('parada'); };
 $('#bTestTTS').onclick=()=>speak(C.lang==='pt-BR'?'Tá com medo, é? Ha, ha, ha, ha.':'I am the eye. I do not blink.');
 
 // ========================= iniciar / parar =========================
@@ -489,7 +505,7 @@ $('#bStart').onclick=async()=>{
   if(!T.on) $('#bTalkOn').click();
   log('tudo iniciado');
 };
-$('#bStop').onclick=()=>{ S.running=false; stopHold(); camOff(); if(T.on) $('#bTalkOn').click(); speechSynthesis.cancel(); bleSend('A'); try{wakeLock?.release();}catch{} log('parado, Uno em automático'); };
+$('#bStop').onclick=()=>{ S.running=false; stopHold(); camOff(); if(T.on) $('#bTalkOn').click(); speechSynthesis.cancel(); try{wakeLock?.release();}catch{} log('parado, Uno em automático'); };
 document.addEventListener('visibilitychange',async()=>{ if(document.visibilityState==='visible' && S.running){ try{ wakeLock = await navigator.wakeLock?.request('screen'); }catch{} } });
 
 paintModeButtons(); drawEye();
