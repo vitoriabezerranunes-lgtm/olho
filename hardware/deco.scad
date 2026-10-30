@@ -126,7 +126,7 @@ module body_deco() {
     for (s=[-1,1]) translate([s*(L/2+rel/2), 0, 0]) rotate([0,0,s>0?90:-90]) {
       C(1) translate([0,-rel/2,0]) wreath_eye(0, 27, 17);
       // ramos verticais nas bordas (fora da sombra dos reforços das alças)
-      for (s2=[-1,1]) C(1) translate([s2*42, -rel/2, 29]) rotate([90,0,0]) linear_extrude(rel) translate([0,-60]) rotate([0,0,90]) garland_arc(60, -20, 20, 12, 5.0, 1.7);
+      for (s2=[-1,1]) C(1) translate([s2*42, -rel/2, 29]) rotate([90,0,0]) linear_extrude(rel) translate([-60,0]) garland_arc(60, -20, 20, 12, 5.0, 1.7);
       C(1) translate([0, -1.0, H-6]) dentils(92, 6, 3, 4);
     }
     // traseira: três coroas com olhos + festões entre elas + dentículos
@@ -134,7 +134,7 @@ module body_deco() {
     C(1) translate([0, W/2+1.0, H-6]) rotate([0,0,180]) dentils(140, 6, 3, 4);
     // frente: dentículos e ramos verticais nas margens
     C(1) translate([0, -W/2-3-1.0, H-6]) dentils(140, 6, 3, 4);
-    for (s=[-1,1]) C(1) translate([s*62, -W/2-3-rel/2, 36]) rotate([90,0,0]) linear_extrude(rel) translate([0,-60]) rotate([0,0,90]) garland_arc(60, -22, 22, 12, 5.2, 1.8);
+    for (s=[-1,1]) C(1) translate([s*62, -W/2-3-rel/2, 36]) rotate([90,0,0]) linear_extrude(rel) translate([-60,0]) garland_arc(60, -22, 22, 12, 5.2, 1.8);
     // pilastras nas arestas
     for (sx=[-1,1], sy=[-1,1]) C(1) translate([sx*(L/2-rc), sy*(W/2-rc), 0]) rotate([0,0,atan2(sy,sx)+45]) translate([rc-0.5,0,0]) rotate([0,0,90]) pilaster(H);
   } else {
