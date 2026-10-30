@@ -1,27 +1,31 @@
 include <params.scad>
-// CORPO: caixa aberta em cima, soquete do cabo no fundo (canto traseiro-esquerdo),
-// pad liso na frente pra colar/parafusar o berço do celular.
+// CORPO v2: caixa aberta em cima, DUAS ALÇAS laterais (paredes menores, x = ±L/2),
+// pad liso na frente pra parafusar o berço do celular. Sem bastão.
+// Imprime em pé, boca pra cima, sem suporte: as alças têm reforço a 45° por baixo.
+hb = 13;        // espessura da barra da alça
+hoff = 26;      // distância da barra até a parede (espaço pros dedos)
+hlen = 70;      // comprimento da barra (ao longo de y)
+hz = H - 16;    // altura do topo da barra
+module handle(side) {
+  // barra
+  translate([side*(L/2 + hoff + hb/2), 0, hz - hb/2]) rotate([90,0,0]) hull() { for (y=[-hlen/2+hb/2, hlen/2-hb/2]) translate([0,0,y]) cylinder(d=hb, h=0.01, center=true); }
+  // ponte superior entre parede e barra, nas duas pontas
+  for (y=[-hlen/2+hb/2, hlen/2-hb/2]) translate([side*(L/2 + (hoff+hb)/2), y, hz - hb/2]) cube([hoff+hb, hb, hb], center=true);
+  // reforço a 45° por baixo de cada ponte (pra imprimir sem suporte)
+  for (y=[-hlen/2+hb/2, hlen/2-hb/2]) hull() {
+    translate([side*(L/2+0.01), y, hz - hb - (hoff+hb)]) cube([0.02, hb, 0.02], center=true);
+    translate([side*(L/2 + (hoff+hb)/2), y, hz - hb]) cube([hoff+hb, hb, 0.02], center=true);
+  }
+}
 difference() {
   union() {
     rbox(L, W, H, rc);
-    // pad frontal 3 mm (face y = -W/2), pra fixação do berço do celular
-    translate([-L/2+10, -W/2-3, 0]) cube([L-20, 3, H]);
+    translate([-L/2+10, -W/2-3, 0]) cube([L-20, 3, H]);   // pad frontal 3 mm
+    handle(1); handle(-1);
   }
-  // cavidade
-  translate([0,0,floor_t]) rbox(L-2*wall, W-2*wall, H, rc-wall);
-  // furo do cabo atravessando o fundo
-  translate([-L/2+wall+16, W/2-wall-16, -1]) cylinder(d=dowel_d, h=floor_t+2);
-  // recorte traseiro pra botão/cabo do power bank (40 x 14 mm, perto do fundo)
-  translate([-20, W/2-wall-1, floor_t+6]) cube([40, wall+2, 14]);
-  // furos de parafuso M3 no pad frontal (grade 2x3) pro berço do celular
-  for (x=[-40,0,40], z=[20,55]) translate([x, -W/2-4, z]) rotate([-90,0,0]) cylinder(d=3.2, h=10);
+  translate([0,0,floor_t]) rbox(L-2*wall, W-2*wall, H, rc-wall);           // cavidade
+  translate([-20, W/2-wall-1, floor_t+6]) cube([40, wall+2, 14]);         // recorte traseiro (botão/cabo do power bank)
+  for (x=[-40,0,40], z=[20,55]) translate([x, -W/2-4, z]) rotate([-90,0,0]) cylinder(d=3.2, h=10); // furos M3 do berço
+  for (s=[-1,1]) translate([s*(L/2-12), 0, -1]) cylinder(d=6, h=floor_t+2);  // 2 furos no fundo pra fita/alça de pescoço
 }
-// soquete do cabo (boss) com furo passante
-translate([-L/2+wall+16, W/2-wall-16, 0]) difference() {
-  cylinder(d=dowel_d+6, h=socket_h);
-  translate([0,0,-1]) cylinder(d=dowel_d, h=socket_h+2);
-}
-// reforços do soquete nas paredes
-translate([-L/2+wall, W/2-wall-16-(dowel_d+6)/2, 0]) cube([16, dowel_d+6, 6]);
-// trilhos no fundo pra protoboard/velcro não escorregar (2 nervuras baixas)
-for (y=[-20, 20]) translate([-30, y-1, floor_t]) cube([60, 2, 2]);
+for (y=[-20, 20]) translate([-30, y-1, floor_t]) cube([60, 2, 2]);   // nervuras no fundo (protoboard não escorrega)
