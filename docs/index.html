@@ -45,13 +45,19 @@
   .bubble{background:#0f0f15;border:1px solid var(--line);border-radius:12px;padding:10px;margin:6px 0;font-size:15px}
   .bubble.me{border-color:#3a3a4a} .bubble.eye{border-color:var(--accent)}
   .small{font-size:12px;color:var(--muted)}
+  #cap{position:fixed;inset:0;background:#000;color:#e6c66a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;z-index:50}
+  #cap[hidden]{display:none}
+  #capEye{font-size:min(18vw,96px);line-height:1;filter:grayscale(1) brightness(1.4)}
+  #capText{font:600 min(8vw,44px)/1.2 -apple-system,system-ui,Segoe UI,Roboto,sans-serif;color:#f3e7c6;max-width:92vw;text-wrap:balance}
+  #capStatus{font-size:min(4vw,18px);color:#8a7a4a;letter-spacing:.08em;text-transform:uppercase}
+  #capClose{position:absolute;right:12px;bottom:12px;opacity:.35;font-size:12px;padding:6px 10px}
   footer{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(transparent,var(--bg) 30%);padding:12px 16px 18px}
   footer .row > *{flex:1}
 </style>
 </head>
 <body>
 <header>
-  <h1>Olho Cérebro <span class="small">v18</span></h1>
+  <h1>Olho Cérebro <span class="small">v19</span></h1>
   <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
   <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
   <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
@@ -124,6 +130,7 @@
       <button class="b" id="bListen">Ouvir 1 vez</button>
       <button class="b" id="bTestTTS">Testar voz</button>
     </div>
+    <div class="row" style="margin-top:8px"><button class="b" id="bCaption">Modo legenda (tela pra fora, câmera frontal)</button></div>
     <div class="small" style="margin-top:8px">Com a conversa ligada o microfone fica sempre aberto. Ele só responde quando a câmera está vendo um rosto, e solta a frase de abertura quando alguém chega perto (no máximo uma vez a cada 30 s). Falas de uma palavra são ignoradas.</div>
   </div>
   <div class="card"><h2>Conversa</h2><div id="chat"></div></div>
@@ -189,6 +196,12 @@ Beltrana: dona da festa. Pergunta: qual foi o pior convidado até agora."></text
 <section id="logtab"><div class="card"><div id="log"></div><div class="row" style="margin-top:8px"><button class="b" id="bClear">Limpar</button></div></div></section>
 </main>
 
+<div id="cap" hidden>
+  <div id="capEye">👁</div>
+  <div id="capText">…</div>
+  <div id="capStatus">parada</div>
+  <button class="b" id="capClose">sair da legenda</button>
+</div>
 <footer><div class="row">
   <button class="b p" id="bStart">▶ Iniciar tudo</button>
   <button class="b d" id="bStop">■ Parar</button>
@@ -441,7 +454,9 @@ function listen(ms=6000){
     setTimeout(()=>finish(null), ms);
   });
 }
-function addBubble(who,text){ const d=document.createElement('div'); d.className='bubble '+who; d.textContent=(who==='eye'?'👁 ':'🗣 ')+text; $('#chat').prepend(d); }
+function addBubble(who,text){ const d=document.createElement('div'); d.className='bubble '+who; d.textContent=(who==='eye'?'👁 ':'🗣 ')+text; $('#chat').prepend(d); if(who==='eye') $('#capText').textContent=text; }
+$('#bCaption').onclick=async()=>{ $('#cap').hidden=false; if(V.facing!=='user'){ V.facing='user'; if(V.stream) await camOn(); } try{ await document.documentElement.requestFullscreen?.(); }catch{} };
+$('#capClose').onclick=()=>{ $('#cap').hidden=true; try{ document.exitFullscreen?.(); }catch{} };
 async function askClaude(userText, situation){
   if(!C.apiKey){ log('sem chave de API'); return null; }
   const guests = (C.guests||'').trim();
@@ -462,7 +477,7 @@ async function askClaude(userText, situation){
 }
 // ===== sempre ouvindo; responde só quando há um rosto na câmera =====
 T.rec=null; T.listening=false; T.lastOpenerAt=0;
-function setTalkStatus(t){ $('#kTalk').textContent=t; }
+function setTalkStatus(t){ $('#kTalk').textContent=t; $('#capStatus').textContent=t; }
 function startListening(){
   if(!T.on || T.busy || T.listening) return;
   if(!SR){ log('sem reconhecimento de fala neste navegador'); return; }
