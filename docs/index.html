@@ -51,7 +51,7 @@
 </head>
 <body>
 <header>
-  <h1>Olho Cérebro <span class="small">v11</span></h1>
+  <h1>Olho Cérebro <span class="small">v12</span></h1>
   <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
   <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
   <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
@@ -146,6 +146,11 @@
     </select>
     <label>Idioma da conversa</label>
     <select id="lang"><option value="pt-BR">Português</option><option value="en-US">English</option></select>
+    <label>Voz</label>
+    <select id="voiceSel"><option value="">automática</option></select>
+    <label>tom <span id="vPitch">0.7</span> (menor = mais grave; abaixo de 0.5 costuma embolar)</label><input type="range" id="pitch" min="0.3" max="1.3" step="0.05" value="0.7">
+    <label>velocidade <span id="vRate">0.88</span></label><input type="range" id="rate" min="0.5" max="1.3" step="0.02" value="0.88">
+    <div class="row" style="margin-top:8px"><button class="b" id="bVoiceTest">Ouvir essa voz</button></div>
     <label>Frase de abertura fixa (vazio = o Claude inventa)</label><input type="text" id="opener" placeholder="Tá com medo, é? Ha, ha, ha, ha.">
     <label>Personalidade do olho (system prompt)</label>
     <textarea id="persona"></textarea>
@@ -201,7 +206,7 @@ const cfg = {
   set(k,v){ try{ localStorage.setItem('olho.'+k, JSON.stringify(v)); }catch{} },
 };
 const fields = {
-  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','pt-BR'], opener:['#opener','Tá com medo, é? Ha, ha, ha, ha.'], persona:['#persona',DEFAULT_PERSONA],
+  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','pt-BR'], opener:['#opener','Tá com medo, é? Ha, ha, ha, ha.'], voice:['#voiceSel',''], pitch:['#pitch',0.7], rate:['#rate',0.88], persona:['#persona',DEFAULT_PERSONA],
   panC:['#cPanC',90], panS:['#cPanS',60], tiltC:['#cTiltC',90], tiltS:['#cTiltS',60],
   invPan:['#cInvPan',false], invTilt:['#cInvTilt',false], near:['#cNear',22], cool:['#cCool',25], turns:['#cTurns',3],
 };
@@ -224,9 +229,9 @@ function saveCfg(){
 function refreshCfgLabels(){
   $('#vPC').textContent=$('#cPanC').value; $('#vPS').textContent=$('#cPanS').value;
   $('#vTC').textContent=$('#cTiltC').value; $('#vTS').textContent=$('#cTiltS').value;
-  $('#vNear').textContent=$('#cNear').value; $('#vCool').textContent=$('#cCool').value; $('#vTurns').textContent=$('#cTurns').value;
+  $('#vNear').textContent=$('#cNear').value; $('#vPitch').textContent=$('#pitch').value; $('#vRate').textContent=$('#rate').value; $('#vCool').textContent=$('#cCool').value; $('#vTurns').textContent=$('#cTurns').value;
 }
-document.querySelectorAll('#config input, #config select, #config textarea').forEach(el=>el.addEventListener('input',()=>{refreshCfgLabels(); saveCfg();}));
+document.querySelectorAll('#config input, #config select, #config textarea').forEach(el=>el.addEventListener('input',()=>{refreshCfgLabels(); saveCfg(); T.voice=null; if(el.id==='lang') fillVoices();}));
 $('#bSave').onclick=saveCfg;
 $('#bPersonaReset').onclick=()=>{ $('#persona').value=DEFAULT_PERSONA; saveCfg(); };
 loadCfg();
@@ -358,17 +363,27 @@ const T = { on:false, busy:false, history:[], voice:null };
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 function pickVoice(){
   const vs=speechSynthesis.getVoices(); if(!vs.length) return null;
+  if(C.voice){ const chosen=vs.find(v=>v.name===C.voice); if(chosen) return chosen; }
   const lang=C.lang; const pref = vs.filter(v=>v.lang.replace('_','-').startsWith(lang.split('-')[0]));
   const male = pref.find(v=>/Daniel|Ricardo|Joaquim|Felipe|Thiago|Antonio|Diego|Jorge|male|masc/i.test(v.name));
   return male || pref.find(v=>/Google|Natural|Premium|Enhanced/i.test(v.name)) || pref[0] || vs[0];
 }
-speechSynthesis.onvoiceschanged=()=>{ T.voice=pickVoice(); };
+function fillVoices(){
+  const sel=$('#voiceSel'); const vs=speechSynthesis.getVoices(); if(!vs.length) return;
+  const cur=C.voice||''; sel.innerHTML='<option value="">automática</option>';
+  const fam=C.lang.split('-')[0];
+  const sorted=[...vs].sort((a,b)=> (b.lang.startsWith(fam)-a.lang.startsWith(fam)) || a.name.localeCompare(b.name));
+  for(const v of sorted){ const o=document.createElement('option'); o.value=v.name; o.textContent=`${v.name} (${v.lang})`; if(v.name===cur) o.selected=true; sel.appendChild(o); }
+}
+speechSynthesis.onvoiceschanged=()=>{ fillVoices(); T.voice=pickVoice(); };
+setTimeout(fillVoices,500);
+$('#bVoiceTest').onclick=()=>{ T.voice=null; speak(C.lang==='pt-BR'?'Tá com medo, é? Ha, ha, ha, ha.':'Are you scared? Ha, ha, ha, ha.'); };
 function speak(text){
   return new Promise(res=>{
     if(!('speechSynthesis' in window)) return res();
     speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text); u.lang=C.lang; if(!T.voice) T.voice=pickVoice(); if(T.voice) u.voice=T.voice;
-    u.rate=0.82; u.pitch=0.45; // bem grave e lento: criatura, não assistente
+    u.rate=Number(C.rate)||0.88; u.pitch=Number(C.pitch)||0.7; // ajustáveis na Config
     u.onend=res; u.onerror=res; speechSynthesis.speak(u);
     setTimeout(res, 15000);
   });
