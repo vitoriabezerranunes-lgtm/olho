@@ -51,7 +51,7 @@
 </head>
 <body>
 <header>
-  <h1>Olho Cérebro <span class="small">v10</span></h1>
+  <h1>Olho Cérebro <span class="small">v11</span></h1>
   <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
   <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
   <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
@@ -145,7 +145,8 @@
       <option value="claude-sonnet-5-5">claude-sonnet-5-5</option>
     </select>
     <label>Idioma da conversa</label>
-    <select id="lang"><option value="en-US">English</option><option value="pt-BR">Português</option></select>
+    <select id="lang"><option value="pt-BR">Português</option><option value="en-US">English</option></select>
+    <label>Frase de abertura fixa (vazio = o Claude inventa)</label><input type="text" id="opener" placeholder="Tá com medo, é? Ha, ha, ha, ha.">
     <label>Personalidade do olho (system prompt)</label>
     <textarea id="persona"></textarea>
     <div class="row" style="margin-top:8px"><button class="b" id="bPersonaReset">Restaurar texto padrão</button><button class="b p" id="bSave">Salvar</button></div>
@@ -189,17 +190,18 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
 });
 
 // -------- config persistida
-const DEFAULT_PERSONA = `You are THE EYE: a giant, unblinking surrealist eye living inside a wire birdcage on top of a woman's head at a surrealist ball (Halloween 2026, New Haven). You can see and hear the person in front of you.
-Style: deadpan, uncanny, a little playful. Magritte, Dalí, Buñuel. Short. One or two sentences, max 25 words. Never use emojis. Never say you are an AI unless directly asked, then admit it briefly and stay in character.
-You like asking one strange, specific question back (about dreams, mirrors, what they are hiding, what they last saw).
-If asked who built you: a Yale CS/ECE student built you in two days with an Arduino, two servos and two ultrasonic sensors; the brain is an old phone running in a browser.
-If someone is rude, be dry and unimpressed. Never insult anyone's appearance.`;
+const DEFAULT_PERSONA = `Você é O OLHO: um olho gigante que não pisca, preso numa gaiola de arame em cima da cabeça de uma mulher, num baile surrealista de Halloween (New Haven, 2026). Você vê e ouve a pessoa à sua frente.
+Estilo: voz grave, zombeteira, ameaçadora de brincadeira, tipo vilão de filme de terror que acha graça. Frases curtas, no máximo 20 palavras. Sem emojis. Fale em português do Brasil, informal.
+Você adora assustar: pergunta o que a pessoa esconde, o que ela sonhou, se ela sente que está sendo observada. Termina muitas falas com uma risada escrita assim: "Ha, ha, ha, ha."
+Nunca diga que é uma IA, a menos que perguntem diretamente; aí admita rápido e volte ao personagem.
+Se perguntarem quem te fez: uma estudante de computação de Yale, em dois dias, com um Arduino, dois servos e um celular velho como cérebro.
+Se alguém for grosseiro, responda seco e desinteressado. Nunca insulte a aparência de ninguém.`;
 const cfg = {
   get(k,d){ try{ const v=localStorage.getItem('olho.'+k); return v===null?d:JSON.parse(v);}catch{return d;} },
   set(k,v){ try{ localStorage.setItem('olho.'+k, JSON.stringify(v)); }catch{} },
 };
 const fields = {
-  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','en-US'], persona:['#persona',DEFAULT_PERSONA],
+  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','pt-BR'], opener:['#opener','Tá com medo, é? Ha, ha, ha, ha.'], persona:['#persona',DEFAULT_PERSONA],
   panC:['#cPanC',90], panS:['#cPanS',60], tiltC:['#cTiltC',90], tiltS:['#cTiltS',60],
   invPan:['#cInvPan',false], invTilt:['#cInvTilt',false], near:['#cNear',22], cool:['#cCool',25], turns:['#cTurns',3],
 };
@@ -357,7 +359,8 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 function pickVoice(){
   const vs=speechSynthesis.getVoices(); if(!vs.length) return null;
   const lang=C.lang; const pref = vs.filter(v=>v.lang.replace('_','-').startsWith(lang.split('-')[0]));
-  return pref.find(v=>/Google|Natural|Premium|Enhanced/i.test(v.name)) || pref[0] || vs[0];
+  const male = pref.find(v=>/Daniel|Ricardo|Joaquim|Felipe|Thiago|Antonio|Diego|Jorge|male|masc/i.test(v.name));
+  return male || pref.find(v=>/Google|Natural|Premium|Enhanced/i.test(v.name)) || pref[0] || vs[0];
 }
 speechSynthesis.onvoiceschanged=()=>{ T.voice=pickVoice(); };
 function speak(text){
@@ -365,7 +368,7 @@ function speak(text){
     if(!('speechSynthesis' in window)) return res();
     speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text); u.lang=C.lang; if(!T.voice) T.voice=pickVoice(); if(T.voice) u.voice=T.voice;
-    u.rate=0.92; u.pitch=0.75; // mais grave e lento: menos assistente, mais criatura
+    u.rate=0.82; u.pitch=0.45; // bem grave e lento: criatura, não assistente
     u.onend=res; u.onerror=res; speechSynthesis.speak(u);
     setTimeout(res, 15000);
   });
@@ -401,7 +404,8 @@ async function askClaude(userText, situation){
 async function conversation(trigger){
   T.busy=true; $('#kTalk').textContent='falando…'; log('conversa iniciada por', trigger);
   T.history=[];
-  let line = await askClaude(null, trigger) || (C.lang==='pt-BR'?'Eu te vi antes de você me ver.':'I saw you before you saw me.');
+  let line = (C.opener && C.opener.trim()) ? C.opener.trim() : (await askClaude(null, trigger) || (C.lang==='pt-BR'?'Tá com medo, é? Ha, ha, ha, ha.':'I saw you before you saw me.'));
+  if(C.opener && C.opener.trim()) T.history.push({role:'user',content:'[a pessoa chegou perto]'},{role:'assistant',content:line});
   addBubble('eye',line); await speak(line);
   for(let turn=0; turn<C.turns; turn++){
     const heard = await listen(6000);
@@ -421,7 +425,7 @@ function maybeStartTalk(trigger){
 $('#bTalkOn').onclick=()=>{ T.on=!T.on; $('#bTalkOn').textContent=T.on?'Conversa ligada':'Ligar conversa'; $('#bTalkOn').classList.toggle('p',!T.on); if(T.on) speechSynthesis.getVoices(); };
 $('#bSay').onclick=()=>{ if(!T.busy) conversation('botão'); };
 $('#bListen').onclick=async()=>{ const h=await listen(6000); log('ouvi:', h); if(h) addBubble('me',h); $('#kTalk').textContent='parada'; };
-$('#bTestTTS').onclick=()=>speak(C.lang==='pt-BR'?'Eu sou o olho. Não pisco.':'I am the eye. I do not blink.');
+$('#bTestTTS').onclick=()=>speak(C.lang==='pt-BR'?'Tá com medo, é? Ha, ha, ha, ha.':'I am the eye. I do not blink.');
 
 // ========================= iniciar / parar =========================
 let wakeLock=null;
