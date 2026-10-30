@@ -21,3 +21,5 @@ Medidas a conferir antes de imprimir: `dowel_d` (cabo) em params.scad; `pt_x`/`p
 | Íris | iris.stl | deitada; cor escura (azul/verde) se tiver | ~8 min |
 
 Com o olho impresso, `eye_mount.stl` não é necessário: a metade de trás já tem a base plana com rasgos pra prender direto na plataforma do pan-tilt.
+
+| Trava do celular (×2) | phone_clip.stl | deitada; imprime 2 | ~5 min |

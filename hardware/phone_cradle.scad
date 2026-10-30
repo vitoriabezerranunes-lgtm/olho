@@ -50,8 +50,8 @@ module cavities() {
 difference() { body(); cavities(); }
 // pinos com cabeça do lado de fora dos trilhos: enganchar elástico de cabelo por cima do celular (z=45 e z=90, longe da câmera)
 for (s=[-1,1], z=[45, 90]) translate([s*(slot_w/2+rail), y_front-2, z]) rotate([0, s*90, 0]) {
-  cylinder(d=3.5, h=5, $fn=24);
-  translate([0,0,5]) cylinder(d1=6, d2=4, h=2.5, $fn=24);
+  cylinder(d=3.5, h=6, $fn=24);                      // haste: 2,4 da barrinha + folga
+  translate([0,0,6]) cylinder(d1=6, d2=4, h=2.5, $fn=24); // cabeça
 }
 // abas flexíveis: lâminas de 0,8 mm nos trilhos, apertam as laterais do celular (1,2 mm de interferência)
 for (s=[-1,1], z=[25, 60, 95]) translate([s*(slot_w/2) - (s>0?0:0.6) , back_t+1, z]) hull() {
