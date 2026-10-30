@@ -4,7 +4,7 @@ use <body.scad>
 use <lid.scad>
 PAINT = 0;            // 0 = como impresso (tudo preto); 1 = pintado (dourado nos relevos/gravações)
 PART = 0;             // 0 = montado (render), 1 = só corpo (STL), 2 = só tampa (STL)
-STYLE = 1;            // 0 = sóbrio, 1 = gótico, 2 = clássico/barroco (rosetas, louros, acanto, dentículos, óvulos, pilastras)
+STYLE = 3;            // 0 = sóbrio, 1 = gótico, 2 = clássico (rosetas), 3 = louros (coroas com olhos, festões floridos, dentículos, pilastras)
 NAME = "ARGUS";
 MOTTO = "VIDEO ERGO SUM";
 FONT = "Liberation Serif:style=Bold";
@@ -71,6 +71,28 @@ module acanthus_corner(){ linear_extrude(rel) { scroll2d(); rotate(180) translat
 module pilaster(hgt){ translate([-3,-rel,0]) cube([6, rel, hgt-9]); translate([-4,-rel,hgt-9]) cube([8, rel+0.3, 3]); translate([-3.5,-rel,hgt-6]) cube([7, rel+0.6, 1.5]); }
 module medallion(){ rotate([90,0,0]) linear_extrude(rel) { difference(){ scale([1,1.4]) circle(r=6,$fn=48); scale([1,1.4]) circle(r=5,$fn=48);} rosette2d(4,8); } }
 
+
+// ---------- louros floridos ----------
+module berry_pair(){ for (s=[-1,1]) translate([0,s*1.1]) circle(r=0.75,$fn=12); }
+module flower5(r=1.7){ for(a=[0:72:359]) rotate(a) translate([r*0.55,0]) circle(r=r*0.5,$fn=12); circle(r=r*0.35,$fn=12); }
+// guirlanda ao longo de um arco de circunferência (centro na origem), de ângulo a0 a a1, raio r; folhas tangentes ao arco
+module garland_arc(r, a0, a1, n=14, leaf_l=6.2, leaf_w=2.0){
+  for (i=[0:n-1]) { a = a0 + (a1-a0)*i/(n-1); side = (i%2==0)?1:-1;
+    rotate([0,0,a]) translate([r + side*1.3, 0]) rotate([0,0,90 + side*35]) leaf2d(leaf_l, leaf_w);
+    if (i%4==2) rotate([0,0,a + (a1-a0)/(n-1)/2]) translate([r,0]) berry_pair();
+    if (i%7==3) rotate([0,0,a + (a1-a0)/(n-1)/2]) translate([r - 2.2*side,0]) flower5(1.9);
+  }
+  // haste
+  difference(){ circle(r=r+0.45,$fn=96); circle(r=r-0.45,$fn=96); rotate([0,0,a1]) translate([-200,0]) square([400,400]); rotate([0,0,a0]) translate([-200,-400]) square([400,400]); }
+}
+module wreath2d(r=16, n=18){ for (i=[0:n-1]) { a=i*360/n; rotate([0,0,a]) translate([r+0.7,0]) rotate([0,0,62]) leaf2d(5.6,1.8); rotate([0,0,a+360/n/2]) translate([r-1.3,0]) rotate([0,0,118]) leaf2d(4.6,1.5); if (i%3==0) rotate([0,0,a+360/n/2]) translate([r+0.2,0]) berry_pair(); if (i%6==3) rotate([0,0,a]) translate([r-2.6,0]) flower5(1.8); } difference(){ circle(r=r-0.1,$fn=96); circle(r=r-0.9,$fn=96); } }
+// coroa com olho fechado no centro, numa parede vertical (plano XZ): x, z = centro
+module wreath_eye(x, z, r=17){ translate([x,0,z]) rotate([90,0,0]) { linear_extrude(rel) wreath2d(r, 18); translate([0,-r*0.05,0]) closed_eye(r*0.95, r*0.32); } }
+// festão: arco de guirlanda pendurado entre dois pontos (x1,x2) na altura ztop, com flecha sag
+module festoon(x1, x2, ztop, sag){ c=(x1+x2)/2; half=(x2-x1)/2; R=(half*half+sag*sag)/(2*sag); zc=ztop - sag + R; ang=asin(half/R);
+  translate([c,0,zc]) rotate([90,0,0]) linear_extrude(rel) garland_arc(R, 270-ang, 270+ang, max(8,floor(2*ang*R/360*6.283/5.5)));
+}
+
 module body_deco() {
   C(0) body_base();
   if (STYLE==0) {
@@ -97,6 +119,22 @@ module body_deco() {
     // frente: dentículos no alto e medalhões ovais nas margens
     C(1) translate([0, -W/2-3-1.0, H-6]) dentils(140, 6, 3, 4);
     for (s=[-1,1]) C(1) translate([s*62, -W/2-3-rel/2, 40]) rotate([0,0,180]) medallion();
+    // pilastras nas arestas
+    for (sx=[-1,1], sy=[-1,1]) C(1) translate([sx*(L/2-rc), sy*(W/2-rc), 0]) rotate([0,0,atan2(sy,sx)+45]) translate([rc-0.5,0,0]) rotate([0,0,90]) pilaster(H);
+  } else if (STYLE==3) {
+    // laterais: coroa de louro com olho sob a alça + festões dos cantos; cornija de dentículos
+    for (s=[-1,1]) translate([s*(L/2+rel/2), 0, 0]) rotate([0,0,s>0?90:-90]) {
+      C(1) translate([0,-rel/2,0]) wreath_eye(0, 27, 17);
+      // ramos verticais nas bordas (fora da sombra dos reforços das alças)
+      for (s2=[-1,1]) C(1) translate([s2*42, -rel/2, 29]) rotate([90,0,0]) linear_extrude(rel) translate([0,-60]) rotate([0,0,90]) garland_arc(60, -20, 20, 12, 5.0, 1.7);
+      C(1) translate([0, -1.0, H-6]) dentils(92, 6, 3, 4);
+    }
+    // traseira: três coroas com olhos + festões entre elas + dentículos
+    C(1) translate([0, W/2+rel/2, 0]) rotate([0,0,180]) translate([0,-rel/2,0]) { wreath_eye(-44, 30, 16); wreath_eye(0, 30, 16); wreath_eye(44, 30, 16); festoon(-66, -22, 62, 10); festoon(-22, 22, 62, 10); festoon(22, 66, 62, 10); }
+    C(1) translate([0, W/2+1.0, H-6]) rotate([0,0,180]) dentils(140, 6, 3, 4);
+    // frente: dentículos e ramos verticais nas margens
+    C(1) translate([0, -W/2-3-1.0, H-6]) dentils(140, 6, 3, 4);
+    for (s=[-1,1]) C(1) translate([s*62, -W/2-3-rel/2, 36]) rotate([90,0,0]) linear_extrude(rel) translate([0,-60]) rotate([0,0,90]) garland_arc(60, -22, 22, 12, 5.2, 1.8);
     // pilastras nas arestas
     for (sx=[-1,1], sy=[-1,1]) C(1) translate([sx*(L/2-rc), sy*(W/2-rc), 0]) rotate([0,0,atan2(sy,sx)+45]) translate([rc-0.5,0,0]) rotate([0,0,90]) pilaster(H);
   } else {
@@ -128,6 +166,10 @@ module lid_deco() {
     translate([0,0,lid_t-eng]) linear_extrude(eng+1) frame2d(L-10, W-10, 1.0);
   }
   // versão pintada: desenha o ouro dentro das gravações
+  if (STYLE==3) {
+    C(1) translate([0,18,lid_t]) linear_extrude(rel) wreath2d(22.5, 20);
+    for (sx=[-1,1], sy=[-1,1]) C(1) translate([sx*(L/2-13), sy*(W/2-12), lid_t]) rotate([0,0,atan2(sy,sx)+180]) acanthus_corner();
+  }
   if (STYLE==2) {
     C(1) translate([0,18,lid_t]) laurel(22.5, 22);
     for (sx=[-1,1], sy=[-1,1]) C(1) translate([sx*(L/2-13), sy*(W/2-12), lid_t]) rotate([0,0,atan2(sy,sx)+180]) acanthus_corner();
