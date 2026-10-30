@@ -5,7 +5,7 @@ include <params.scad>
 // Imprime DEITADO: chapa de trás no prato. Sem suporte.
 ph_t = 9;             // espessura do celular com case (mm)  <-- AJUSTE se precisar (folga de 0,8)
 w_min = 70; w_max = 88;   // faixa de largura aceita
-rail_h = 130; lip = 4; lip_top = 100; back_t = 2.5; rail = 4;
+rail_h = 170; lip = 4; lip_top = 100; back_t = 2.5; rail = 4;   // 170 = 80 da caixa + 90 pendurado: a chapa alcança as DUAS fileiras de furos (z 110 e 145)
 slot_t = ph_t + 0.8;
 y_front = back_t + slot_t;
 horn_depth = 26; horn_h_in = 12; horn_h_out = 30; pocket_h = 12;
