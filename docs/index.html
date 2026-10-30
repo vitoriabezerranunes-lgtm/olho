@@ -51,7 +51,7 @@
 </head>
 <body>
 <header>
-  <h1>Olho Cérebro <span class="small">v12</span></h1>
+  <h1>Olho Cérebro <span class="small">v13</span></h1>
   <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
   <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
   <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
@@ -146,7 +146,19 @@
     </select>
     <label>Idioma da conversa</label>
     <select id="lang"><option value="pt-BR">Português</option><option value="en-US">English</option></select>
-    <label>Voz</label>
+    <label>Motor de voz</label>
+    <select id="ttsEngine"><option value="browser">Navegador (sem emoção, offline)</option><option value="eleven">ElevenLabs (emoção, grátis até 10k caracteres/mês)</option><option value="openai">OpenAI gpt-4o-mini-tts (emoção, chave paga)</option></select>
+    <div id="elBox">
+      <label>ElevenLabs API key</label><input type="password" id="elKey" placeholder="xi-...">
+      <label>ElevenLabs voice ID (pega em Voices → ⋯ → Copy voice ID)</label><input type="text" id="elVoice">
+      <label>Modelo</label><select id="elModel"><option value="eleven_multilingual_v2">eleven_multilingual_v2 (estável)</option><option value="eleven_v3">eleven_v3 (mais expressivo, aceita [laughs])</option></select>
+    </div>
+    <div id="oaBox">
+      <label>OpenAI API key</label><input type="password" id="oaKey" placeholder="sk-...">
+      <label>Voz OpenAI</label><select id="oaVoice"><option>onyx</option><option>ash</option><option>echo</option><option>fable</option><option>alloy</option><option>nova</option><option>shimmer</option><option>coral</option><option>sage</option></select>
+      <label>Instrução de tom</label><textarea id="oaInstr" style="min-height:70px"></textarea>
+    </div>
+    <label>Voz do navegador (reserva)</label>
     <select id="voiceSel"><option value="">automática</option></select>
     <label>tom <span id="vPitch">0.7</span> (menor = mais grave; abaixo de 0.5 costuma embolar)</label><input type="range" id="pitch" min="0.3" max="1.3" step="0.05" value="0.7">
     <label>velocidade <span id="vRate">0.88</span></label><input type="range" id="rate" min="0.5" max="1.3" step="0.02" value="0.88">
@@ -197,7 +209,7 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
 // -------- config persistida
 const DEFAULT_PERSONA = `Você é O OLHO: um olho gigante que não pisca, preso numa gaiola de arame em cima da cabeça de uma mulher, num baile surrealista de Halloween (New Haven, 2026). Você vê e ouve a pessoa à sua frente.
 Estilo: voz grave, zombeteira, ameaçadora de brincadeira, tipo vilão de filme de terror que acha graça. Frases curtas, no máximo 20 palavras. Sem emojis. Fale em português do Brasil, informal.
-Você adora assustar: pergunta o que a pessoa esconde, o que ela sonhou, se ela sente que está sendo observada. Termina muitas falas com uma risada escrita assim: "Ha, ha, ha, ha."
+Você adora assustar: pergunta o que a pessoa esconde, o que ela sonhou, se ela sente que está sendo observada. Termina muitas falas com uma risada escrita assim: "Hahahaha!"
 Nunca diga que é uma IA, a menos que perguntem diretamente; aí admita rápido e volte ao personagem.
 Se perguntarem quem te fez: uma estudante de computação de Yale, em dois dias, com um Arduino, dois servos e um celular velho como cérebro.
 Se alguém for grosseiro, responda seco e desinteressado. Nunca insulte a aparência de ninguém.`;
@@ -206,7 +218,7 @@ const cfg = {
   set(k,v){ try{ localStorage.setItem('olho.'+k, JSON.stringify(v)); }catch{} },
 };
 const fields = {
-  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','pt-BR'], opener:['#opener','Tá com medo, é? Ha, ha, ha, ha.'], voice:['#voiceSel',''], pitch:['#pitch',0.7], rate:['#rate',0.88], persona:['#persona',DEFAULT_PERSONA],
+  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','pt-BR'], opener:['#opener','Tá com medo, é? Hahahahaha!'], voice:['#voiceSel',''], pitch:['#pitch',0.7], rate:['#rate',0.88], tts:['#ttsEngine','browser'], elKey:['#elKey',''], elVoice:['#elVoice','onwK4e9ZLuTAKqWW03F9'], elModel:['#elModel','eleven_multilingual_v2'], oaKey:['#oaKey',''], oaVoice:['#oaVoice','onyx'], oaInstr:['#oaInstr','Voz muito grave, lenta e ameaçadora, como um vilão de filme de terror que acha graça de quem tem medo. Sussurre partes. Ria de verdade, com gosto, quando o texto tiver risada.'], persona:['#persona',DEFAULT_PERSONA],
   panC:['#cPanC',90], panS:['#cPanS',60], tiltC:['#cTiltC',90], tiltS:['#cTiltS',60],
   invPan:['#cInvPan',false], invTilt:['#cInvTilt',false], near:['#cNear',22], cool:['#cCool',25], turns:['#cTurns',3],
 };
@@ -227,6 +239,7 @@ function saveCfg(){
   refreshCfgLabels(); $('#dApi').className='dot '+(C.apiKey?'ok':''); log('config salva');
 }
 function refreshCfgLabels(){
+  const eng=$('#ttsEngine').value; $('#elBox').hidden = eng!=='eleven'; $('#oaBox').hidden = eng!=='openai';
   $('#vPC').textContent=$('#cPanC').value; $('#vPS').textContent=$('#cPanS').value;
   $('#vTC').textContent=$('#cTiltC').value; $('#vTS').textContent=$('#cTiltS').value;
   $('#vNear').textContent=$('#cNear').value; $('#vPitch').textContent=$('#pitch').value; $('#vRate').textContent=$('#rate').value; $('#vCool').textContent=$('#cCool').value; $('#vTurns').textContent=$('#cTurns').value;
@@ -378,7 +391,31 @@ function fillVoices(){
 speechSynthesis.onvoiceschanged=()=>{ fillVoices(); T.voice=pickVoice(); };
 setTimeout(fillVoices,500);
 $('#bVoiceTest').onclick=()=>{ T.voice=null; speak(C.lang==='pt-BR'?'Tá com medo, é? Ha, ha, ha, ha.':'Are you scared? Ha, ha, ha, ha.'); };
-function speak(text){
+async function speak(text){
+  if(C.tts==='eleven' && C.elKey){ if(await speakEleven(text)) return; log('ElevenLabs falhou, usando voz do navegador'); }
+  if(C.tts==='openai' && C.oaKey){ if(await speakOpenAI(text)) return; log('OpenAI TTS falhou, usando voz do navegador'); }
+  return speakBrowser(text);
+}
+async function playBlob(blob){
+  return new Promise(res=>{ const url=URL.createObjectURL(blob); const a=new Audio(url); a.onended=()=>{URL.revokeObjectURL(url);res();}; a.onerror=()=>res(); a.play().catch(()=>res()); setTimeout(res,20000); });
+}
+async function speakEleven(text){
+  try{
+    const r=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(C.elVoice)}?output_format=mp3_44100_128`,{method:'POST',headers:{'xi-api-key':C.elKey,'content-type':'application/json'},
+      body:JSON.stringify({text, model_id:C.elModel, voice_settings:{stability:0.35, similarity_boost:0.8, style:0.7, use_speaker_boost:true}})});
+    if(!r.ok){ log('ElevenLabs HTTP',r.status,(await r.text()).slice(0,160)); return false; }
+    await playBlob(await r.blob()); return true;
+  }catch(e){ log('ElevenLabs erro:',e.message||e); return false; }
+}
+async function speakOpenAI(text){
+  try{
+    const r=await fetch('https://api.openai.com/v1/audio/speech',{method:'POST',headers:{'authorization':'Bearer '+C.oaKey,'content-type':'application/json'},
+      body:JSON.stringify({model:'gpt-4o-mini-tts', voice:C.oaVoice, input:text, instructions:C.oaInstr, response_format:'mp3'})});
+    if(!r.ok){ log('OpenAI TTS HTTP',r.status,(await r.text()).slice(0,160)); return false; }
+    await playBlob(await r.blob()); return true;
+  }catch(e){ log('OpenAI TTS erro:',e.message||e); return false; }
+}
+function speakBrowser(text){
   return new Promise(res=>{
     if(!('speechSynthesis' in window)) return res();
     speechSynthesis.cancel();
