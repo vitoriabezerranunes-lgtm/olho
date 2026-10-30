@@ -8,7 +8,8 @@ STYLE = 3;            // 0 = sóbrio, 1 = gótico, 2 = clássico (rosetas), 3 = 
 NAME = "ARGUS";
 MOTTO = "VIDEO ERGO SUM";
 FONT = "Liberation Serif:style=Bold";
-rel = 0.7;            // altura dos relevos
+rel = 1.0;            // altura total dos relevos (0,3 embutidos na parede + 0,7 visíveis)
+emb = 0.3;            // quanto cada relevo entra na parede (evita peças flutuando no STL)
 eng = 0.6;            // profundidade das gravações
 gold = [0.83,0.68,0.32]; blk = [0.11,0.11,0.13];
 module C(isGold){ color(PAINT && isGold ? gold : blk) children(); }
@@ -124,17 +125,17 @@ module body_deco() {
   } else if (STYLE==3) {
     // laterais: coroa de louro com olho sob a alça + festões dos cantos; cornija de dentículos
     for (s=[-1,1]) translate([s*(L/2+rel/2), 0, 0]) rotate([0,0,s>0?90:-90]) {
-      C(1) translate([0,-rel/2,0]) wreath_eye(0, 27, 17);
+      C(1) translate([0,rel/2+emb,0]) wreath_eye(0, 27, 17);
       // ramos verticais nas bordas (fora da sombra dos reforços das alças)
-      for (s2=[-1,1]) C(1) translate([s2*42, -rel/2, 29]) rotate([90,0,0]) linear_extrude(rel) translate([-60,0]) garland_arc(60, -20, 20, 12, 5.0, 1.7);
-      C(1) translate([0, -1.0, H-6]) dentils(92, 6, 3, 4);
+      for (s2=[-1,1]) C(1) translate([s2*42, rel/2+emb, 29]) rotate([90,0,0]) linear_extrude(rel) translate([-60,0]) garland_arc(60, -20, 20, 12, 5.0, 1.7);
+      C(1) translate([0, -0.5+emb, H-6]) dentils(92, 6, 3, 4);
     }
     // traseira: três coroas com olhos + festões entre elas + dentículos
-    C(1) translate([0, W/2+rel/2, 0]) rotate([0,0,180]) translate([0,-rel/2,0]) { wreath_eye(-44, 30, 16); wreath_eye(0, 30, 16); wreath_eye(44, 30, 16); festoon(-66, -22, 62, 10); festoon(-22, 22, 62, 10); festoon(22, 66, 62, 10); }
-    C(1) translate([0, W/2+1.0, H-6]) rotate([0,0,180]) dentils(140, 6, 3, 4);
-    // frente: dentículos e ramos verticais nas margens
-    C(1) translate([0, -W/2-3-1.0, H-6]) dentils(140, 6, 3, 4);
-    for (s=[-1,1]) C(1) translate([s*62, -W/2-3-rel/2, 36]) rotate([90,0,0]) linear_extrude(rel) translate([-60,0]) garland_arc(60, -22, 22, 12, 5.2, 1.8);
+    C(1) translate([0, W/2+rel/2, 0]) rotate([0,0,180]) translate([0,rel/2+emb,0]) { wreath_eye(-44, 30, 16); wreath_eye(0, 30, 16); wreath_eye(44, 30, 16); festoon(-66, -22, 62, 10); festoon(-22, 22, 62, 10); festoon(22, 66, 62, 10); }
+    C(1) translate([0, W/2+1.0-emb, H-6]) rotate([0,0,180]) dentils(140, 6, 3, 4);
+    // frente (só sobre o pad de 3 mm, |x|<65): dentículos e ramos verticais nas margens
+    C(1) translate([0, -W/2-3-1.0+emb, H-6]) dentils(126, 6, 3, 4);
+    for (s=[-1,1]) C(1) translate([s*59, -W/2-3+emb, 36]) rotate([90,0,0]) linear_extrude(rel) translate([-60,0]) garland_arc(60, -22, 22, 12, 5.2, 1.8);
     // pilastras nas arestas
     for (sx=[-1,1], sy=[-1,1]) C(1) translate([sx*(L/2-rc), sy*(W/2-rc), 0]) rotate([0,0,atan2(sy,sx)+45]) translate([rc-0.5,0,0]) rotate([0,0,90]) pilaster(H);
   } else {
