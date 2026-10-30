@@ -17,6 +17,7 @@ module handle(side) {
     translate([side*(L/2 + (hoff+hb)/2), y, hz - hb]) cube([hoff+hb, hb, 0.02], center=true);
   }
 }
+module body_base() {
 difference() {
   union() {
     rbox(L, W, H, rc);
@@ -30,3 +31,5 @@ difference() {
   translate([-6, -W/2-4, floor_t+4]) cube([12, wall+6, 9]);                   // passagem do cabo de carga do celular (frente, embaixo)
 }
 for (y=[-20, 20]) translate([-30, y-1, floor_t]) cube([60, 2, 2]);   // nervuras no fundo (protoboard não escorrega)
+}
+body_base();

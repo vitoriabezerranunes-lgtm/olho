@@ -3,6 +3,7 @@ include <params.scad>
 // (aceita bases de 24-34 x 20-30 mm), rasgo pros fios atrás do pan-tilt,
 // 2 furos pra velcro/parafuso de segurança.
 pt_x = 23; pt_y = 23;   // medido com régua na base dela: furos a ~23 mm centro a centro (base 33 x 33)
+module lid_base() {
 difference() {
   union() {
     rbox(L, W, lid_t, rc);
@@ -20,6 +21,6 @@ difference() {
   translate([-8, 18 + pt_y/2+8, -5]) cube([16, 7, 10]);
   // furos de segurança nos cantos (velcro ou parafuso)
   for (x=[-L/2+10, L/2-10]) translate([x, 0, -5]) cylinder(d=3.2, h=10);
-  // texto gravado
-  translate([0, -W/2+14, lid_t-0.6]) linear_extrude(1) text("OLHO", size=9, halign="center", valign="center", font="Liberation Sans:style=Bold");
 }
+}
+lid_base();

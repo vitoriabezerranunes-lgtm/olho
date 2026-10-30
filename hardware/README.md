@@ -1,5 +1,7 @@
 # Peças impressas da Lanterna do Olho
 
+**Versão decorada (ARGUS · VIDEO ERGO SUM):** `body_argus.stl` e `lid_argus.stl` substituem `body.stl` e `lid.stl` (mesmas medidas, com relevos de 0,7 mm e gravações de 0,6 mm). Fonte: `deco.scad`. Depois de impressa em preto: pincel seco com acrílica dourada nos relevos e letras.
+
 **Imprima primeiro `test_coupon.stl` (~12 min)**: placa com os rasgos da tampa (parafusa o pan-tilt), disco da base do olho (parafusa na placa vertical) e pedaço do canal do celular (desliza o celular). Se os três encaixarem, o resto está certo.
 
 Desenhadas em OpenSCAD (`*.scad`), exportadas em `*.stl`. Bambu, PLA, 0,2 mm, 3 paredes, 15 % infill, sem suporte.
