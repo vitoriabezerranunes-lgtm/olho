@@ -51,7 +51,7 @@
 </head>
 <body>
 <header>
-  <h1>Olho Cérebro <span class="small">v7</span></h1>
+  <h1>Olho Cérebro <span class="small">v8</span></h1>
   <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
   <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
   <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
@@ -278,7 +278,7 @@ let holdTimer=null, holdP=90, holdT=90;
 function sendAngles(p,t,force=false){
   p=Math.round(p); t=Math.round(t); const now=performance.now();
   if(!force && Math.abs(p-lastSent.p)<1 && Math.abs(t-lastSent.t)<1 && now-lastSent.at<400) return;
-  if(!force && now-lastSent.at<100) return; // 10 Hz máx
+  if(!force && now-lastSent.at<60) return; // ~16 Hz máx
   lastSent={p,t,at:now}; S.pan=p; S.tilt=t; holdP=p; holdT=t; if(!BLE.ch) S.mode='simulador'; drawEye();
   // inversão vale pra tudo (sliders, centro, rastreio): a tela mostra a intenção, o Uno recebe o ângulo espelhado
   const sp = C.invPan ? Math.round(2*C.panC - p) : p;
@@ -326,7 +326,7 @@ $('#bFlip').onclick=()=>{ V.facing = V.facing==='user'?'environment':'user'; if(
 function loopVision(){
   V.raf=requestAnimationFrame(loopVision);
   if(!V.det || video.readyState<2) return;
-  const ts=performance.now(); if(ts-V.lastTs<90) return; V.lastTs=ts;  // ~10 fps, economiza bateria
+  const ts=performance.now(); if(ts-V.lastTs<60) return; V.lastTs=ts;  // ~16 fps
   const res = V.det.detectForVideo(video, ts);
   const W=video.videoWidth, H=video.videoHeight; if(ov.width!==W){ov.width=W;ov.height=H;}
   octx.clearRect(0,0,W,H);
@@ -335,7 +335,7 @@ function loopVision(){
   if(best){
     octx.strokeStyle='#e6c66a'; octx.lineWidth=3; octx.strokeRect(best.originX,best.originY,best.width,best.height);
     const x=(best.originX+best.width/2)/W, y=(best.originY+best.height/2)/H, w=best.width/W;
-    const a=0.5; V.ema = V.ema? {x:V.ema.x+(x-V.ema.x)*a, y:V.ema.y+(y-V.ema.y)*a, w:V.ema.w+(w-V.ema.w)*a} : {x,y,w};
+    const a=0.4; V.ema = V.ema? {x:V.ema.x+(x-V.ema.x)*a, y:V.ema.y+(y-V.ema.y)*a, w:V.ema.w+(w-V.ema.w)*a} : {x,y,w};
     S.face=V.ema; V.lastFaceAt=ts;
     // câmera traseira: x=0 é a ESQUERDA da cena vista pela câmera, que é a direita de quem olha pro olho.
     let sx=(0.5-V.ema.x), sy=(0.5-V.ema.y);

@@ -1,5 +1,5 @@
 /*
-  OLHO — firmware do Arduino Uno (Halloween 2026) — v6
+  OLHO — firmware do Arduino Uno (Halloween 2026) — v7
   ------------------------------------------------
   Um olho gigante num pan-tilt de 2 servos, com dois sensores
   ultrassônicos HC-SR04 e um módulo Bluetooth BLE HM-10.
@@ -100,8 +100,17 @@ void setTarget(int pan, int tilt, float spd) {
 // move um passo em direção ao alvo (chamado a cada 10 ms)
 void stepServos() {
   float dp = tgtPan - curPan, dt = tgtTilt - curTilt;
-  if (abs(dp) <= speedDeg) curPan = tgtPan; else curPan += (dp > 0 ? speedDeg : -speedDeg);
-  if (abs(dt) <= speedDeg) curTilt = tgtTilt; else curTilt += (dt > 0 ? speedDeg : -speedDeg);
+  if (mode == REMOTE) {
+    // rastreio suave: aproxima 16 % da distância a cada 10 ms, no máximo 2,2°/passo. Sem degraus.
+    float sp = dp * 0.16, st = dt * 0.16;
+    if (sp >  2.2) sp =  2.2; if (sp < -2.2) sp = -2.2;
+    if (st >  2.2) st =  2.2; if (st < -2.2) st = -2.2;
+    if (abs(dp) < 0.3) curPan = tgtPan; else curPan += sp;
+    if (abs(dt) < 0.3) curTilt = tgtTilt; else curTilt += st;
+  } else {
+    if (abs(dp) <= speedDeg) curPan = tgtPan; else curPan += (dp > 0 ? speedDeg : -speedDeg);
+    if (abs(dt) <= speedDeg) curTilt = tgtTilt; else curTilt += (dt > 0 ? speedDeg : -speedDeg);
+  }
   panServo.write((int)(curPan + 0.5));
   tiltServo.write((int)(curTilt + 0.5));
 }
@@ -238,7 +247,7 @@ void setup() {
   curPan = tgtPan = PAN_CENTER; curTilt = tgtTilt = TILT_CENTER;
   panServo.write(PAN_CENTER); tiltServo.write(TILT_CENTER);
   delay(600);
-  Serial.println(F("OLHO v6 pronto (sem sensor; R1 liga). Comandos: P<pan>,T<tilt>  C  A  R0/R1  W0/W1  Z"));
+  Serial.println(F("OLHO v7 pronto (suave; sem sensor; R1 liga). Comandos: P<pan>,T<tilt>  C  A  R0/R1  W0/W1  Z"));
 }
 
 void loop() {
