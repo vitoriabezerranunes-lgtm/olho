@@ -2,7 +2,7 @@ include <params.scad>
 // TAMPA: placa com aba interna (encaixe por atrito), 4 rasgos pro pan-tilt
 // (aceita bases de 24-34 x 20-30 mm), rasgo pros fios atrás do pan-tilt,
 // 2 furos pra velcro/parafuso de segurança.
-pt_x = 30; pt_y = 26;   // centro do padrão de furos do pan-tilt (ajuste se medir diferente)
+pt_x = 23; pt_y = 23;   // medido com régua na base dela: furos a ~23 mm centro a centro (base 33 x 33)
 difference() {
   union() {
     rbox(L, W, lid_t, rc);

@@ -10,9 +10,9 @@ difference() {
     translate([-D, -D, -1]) cube([2*D, 2*D, D/2 - 8 + 1]); // corta o polo: fica uma base plana
   }
   sphere(d=D-2*t);                                          // oca
-  for (x=[-11.5, 11.5]) hull() { translate([x-5.5,0,D/2-20]) cylinder(d=3.4,h=30); translate([x+5.5,0,D/2-20]) cylinder(d=3.4,h=30); } // rasgos longos: fendas de 12 a 34 mm
+  for (x=[-14.5, 14.5]) hull() { translate([x-5.5,0,D/2-20]) cylinder(d=3.4,h=30); translate([x+5.5,0,D/2-20]) cylinder(d=3.4,h=30); } // rasgos: fendas de 23 a 35 mm (medido: 25 mm entre paredes internas)
 }
 // disco interno de reforço na base plana (onde os parafusos pegam)
-translate([0,0,D/2-8-3]) difference() { cylinder(d=flat, h=3); for (x=[-11.5,11.5]) hull(){ translate([x-5.5,0,-1]) cylinder(d=3.4,h=5); translate([x+5.5,0,-1]) cylinder(d=3.4,h=5);} }
+translate([0,0,D/2-8-3]) difference() { cylinder(d=flat, h=3); for (x=[-14.5,14.5]) hull(){ translate([x-5.5,0,-1]) cylinder(d=3.4,h=5); translate([x+5.5,0,-1]) cylinder(d=3.4,h=5);} }
 // aba de encaixe (entra na metade da frente)
 translate([0,0,-4]) difference() { cylinder(d=D-2*t-0.4, h=4.01); translate([0,0,-1]) cylinder(d=D-2*t-0.4-2*1.2, h=7); }

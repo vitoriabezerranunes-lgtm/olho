@@ -1,5 +1,7 @@
 # Peças impressas da Lanterna do Olho
 
+**Imprima primeiro `test_coupon.stl` (~12 min)**: placa com os rasgos da tampa (parafusa o pan-tilt), disco da base do olho (parafusa na placa vertical) e pedaço do canal do celular (desliza o celular). Se os três encaixarem, o resto está certo.
+
 Desenhadas em OpenSCAD (`*.scad`), exportadas em `*.stl`. Bambu, PLA, 0,2 mm, 3 paredes, 15 % infill, sem suporte.
 
 | Peça | Arquivo | Como imprimir | Tempo (Bambu) |
