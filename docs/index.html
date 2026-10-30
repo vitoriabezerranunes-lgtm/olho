@@ -467,7 +467,7 @@ async function askClaude(userText, situation){
   msgs.push({ role:'user', content: userText ? userText : `[${situation}] A person just came close to look at you. Say your opening line.` });
   try{
     const r = await fetch('https://api.anthropic.com/v1/messages',{ method:'POST', headers:{ 'content-type':'application/json', 'x-api-key':C.apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model:C.model, max_tokens:160, thinking:{type:'between_tools'}, system:sys, messages:msgs }) });
+      body: JSON.stringify({ model:C.model, max_tokens:160, system:sys, messages:msgs }) });
     if(!r.ok){ log('Claude HTTP', r.status, (await r.text()).slice(0,200)); return null; }
     const j = await r.json(); const text = (j.content||[]).filter(c=>c.type==='text').map(c=>c.text||'').join(' ').trim();
     if(!text){ log('Claude respondeu vazio, stop_reason:', j.stop_reason); return null; }
