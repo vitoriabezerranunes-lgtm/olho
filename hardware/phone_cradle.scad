@@ -5,6 +5,7 @@ include <params.scad>
 ph_w = 80;   // largura do celular com case (mm)  <-- AJUSTE
 ph_t = 9;    // espessura com case (mm)           <-- AJUSTE
 rail_h = 130;        // altura dos trilhos (celular tem ~170; o topo fica livre)
+plate_h = 150;       // chapa de trás mais alta: o berço fica 90 mm abaixo da caixa, celular com o topo na altura da tampa
 lip = 4;             // aba frontal que segura a borda
 lip_top = 100;       // abas só até essa altura (nada cobre a câmera lá em cima)
 back_t = 2.5;        // chapa de trás
@@ -16,7 +17,7 @@ y_front = back_t + slot_t;  // plano da frente do celular
 $fn = 48;
 module body() {
   // chapa de trás
-  translate([-(slot_w+2*rail)/2, 0, 0]) cube([slot_w+2*rail, back_t, rail_h]);
+  translate([-(slot_w+2*rail)/2, 0, 0]) cube([slot_w+2*rail, back_t, plate_h]);
   // trilhos laterais
   for (s=[-1,1]) translate([s*(slot_w/2+rail/2) - rail/2, 0, 0]) cube([rail, y_front+3, rail_h]);
   // abas frontais (com chanfro a 45° por baixo pra imprimir deitado)
@@ -41,8 +42,8 @@ module cavities() {
     translate([-slot_w/2+2, y_front+2.9, 2]) cube([slot_w-4, 0.01, horn_h_in-4]);
     translate([-(slot_w+2*rail)/2-4+2, y_front+3+horn_depth+0.01, 2]) cube([slot_w+2*rail+8-4, 0.01, horn_h_out-4]);
   }
-  // furos M3 (grade da caixa: x = -40,0,40 ; z = 20,55)
-  for (x=[-40,0,40], z=[20,55]) translate([x, -1, z]) rotate([-90,0,0]) cylinder(d=3.4, h=back_t+2);
+  // furos M3 (grade da caixa: x = -40,0,40 ; z = 20,55 na caixa = 110,145 no berço, que fica 90 mm mais baixo)
+  for (x=[-40,0,40], z=[110,145]) translate([x, -1, z]) rotate([-90,0,0]) cylinder(d=3.4, h=back_t+2);
   // abertura na frente da bolsa pra porta USB (passa o cabo de carga por baixo)
   translate([-8, y_front-slot_t-1, -1]) cube([16, slot_t+5, 6]);
 }

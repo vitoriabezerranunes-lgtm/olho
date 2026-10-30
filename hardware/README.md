@@ -5,6 +5,7 @@ Desenhadas em OpenSCAD (`*.scad`), exportadas em `*.stl`. Bambu, PLA, 0,2 mm, 3 
 | Peça | Arquivo | Como imprimir | Tempo (Bambu) |
 |---|---|---|---|
 | Corpo da caixa (com alças) | body.stl | em pé, boca pra cima, como está, sem suporte | ~3,3 h |
+| (o berço do celular fica 9 cm abaixo da caixa: o celular pendura na frente, com o topo na altura da tampa) | | | |
 | Tampa | lid.stl | gravação "OLHO" pra cima | ~40 min |
 | Suporte do olho | eye_mount.stl | disco no prato, pinos pra cima | ~15 min |
 | Berço do celular | phone_cradle.stl | chapa de trás no prato (deitado); **ajuste as medidas em phone_cradle.scad antes** | ~25 min |
