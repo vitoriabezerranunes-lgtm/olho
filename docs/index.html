@@ -51,7 +51,7 @@
 </head>
 <body>
 <header>
-  <h1>Olho Cérebro <span class="small">v17</span></h1>
+  <h1>Olho Cérebro <span class="small">v18</span></h1>
   <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
   <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
   <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
@@ -221,7 +221,7 @@ const cfg = {
   set(k,v){ try{ localStorage.setItem('olho.'+k, JSON.stringify(v)); }catch{} },
 };
 const fields = {
-  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','pt-BR'], opener:['#opener','Tá com medo, é? Hahahahaha! Quem é você?'], voice:['#voiceSel',''], pitch:['#pitch',0.7], rate:['#rate',0.88], guests:['#guests',''], tts:['#ttsEngine','browser'], elKey:['#elKey',''], elVoice:['#elVoice','onwK4e9ZLuTAKqWW03F9'], elModel:['#elModel','eleven_multilingual_v2'], oaKey:['#oaKey',''], oaVoice:['#oaVoice','onyx'], oaInstr:['#oaInstr','Voz muito grave, lenta e ameaçadora, como um vilão de filme de terror que acha graça de quem tem medo. Sussurre partes. Ria de verdade, com gosto, quando o texto tiver risada.'], persona:['#persona',DEFAULT_PERSONA],
+  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','pt-BR'], opener:['#opener','Tá com medo, é? Hahahahaha! Quem é você?'], voice:['#voiceSel',''], pitch:['#pitch',0.7], rate:['#rate',0.88], guests:['#guests','Diógenes: foi pra Suíça semana passada; o Jorge zoou o sapato dele de brincadeira; comprou sapato novo hoje só pra festa. Pergunta: se o sapato novo aguenta a noite inteira.'], tts:['#ttsEngine','browser'], elKey:['#elKey',''], elVoice:['#elVoice','onwK4e9ZLuTAKqWW03F9'], elModel:['#elModel','eleven_multilingual_v2'], oaKey:['#oaKey',''], oaVoice:['#oaVoice','onyx'], oaInstr:['#oaInstr','Voz muito grave, lenta e ameaçadora, como um vilão de filme de terror que acha graça de quem tem medo. Sussurre partes. Ria de verdade, com gosto, quando o texto tiver risada.'], persona:['#persona',DEFAULT_PERSONA],
   panC:['#cPanC',90], panS:['#cPanS',60], tiltC:['#cTiltC',90], tiltS:['#cTiltS',60],
   invPan:['#cInvPan',false], invTilt:['#cInvTilt',false], near:['#cNear',22], cool:['#cCool',30], turns:['#cTurns',3],
 };
