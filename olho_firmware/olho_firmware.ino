@@ -1,5 +1,5 @@
 /*
-  OLHO — firmware do Arduino Uno (Halloween 2026) — v9
+  OLHO — firmware do Arduino Uno (Halloween 2026) — v10
   ------------------------------------------------
   Um olho gigante num pan-tilt de 2 servos, com dois sensores
   ultrassônicos HC-SR04 e um módulo Bluetooth BLE HM-10.
@@ -253,7 +253,7 @@ void setup() {
   curPan = tgtPan = PAN_CENTER; curTilt = tgtTilt = TILT_CENTER;
   panServo.write(PAN_CENTER); tiltServo.write(TILT_CENTER);
   delay(600);
-  Serial.println(F("OLHO v9 pronto (P<pan>,T<tilt>; com ponto-e-virgula). Comandos: P<pan>,T<tilt>  C  A  R0/R1  W0/W1  Z"));
+  Serial.println(F("OLHO v10 pronto. Comandos: P<pan>,T<tilt>  C  A  R0/R1  W0/W1  Z"));
 }
 
 void loop() {
@@ -270,7 +270,9 @@ void loop() {
   }
 
   // REMOTO cai pra AUTO se o celular sumir
-  if (mode == REMOTE && now - lastRemote > REMOTE_TIMEOUT) { mode = AUTO; tNextIdle = 0; }
+  // BUG CORRIGIDO (v10): 'now' era medido antes de ler o Bluetooth; lastRemote era maior que now,
+  // a subtração sem sinal estourava e o modo caía pro AUTO imediatamente. Agora mede na hora.
+  if (mode == REMOTE && (millis() - lastRemote) > REMOTE_TIMEOUT) { mode = AUTO; tNextIdle = 0; }
 
   if (mode == AUTO) {
     if (reactEnabled) updatePerson(); else personNear = false;
