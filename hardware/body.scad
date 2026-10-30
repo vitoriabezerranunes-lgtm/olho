@@ -27,5 +27,6 @@ difference() {
   translate([-20, W/2-wall-1, floor_t+6]) cube([40, wall+2, 14]);         // recorte traseiro (botão/cabo do power bank)
   for (x=[-40,0,40], z=[20,55]) translate([x, -W/2-4, z]) rotate([-90,0,0]) cylinder(d=3.2, h=10); // furos M3 do berço
   for (s=[-1,1]) translate([s*(L/2-12), 0, -1]) cylinder(d=6, h=floor_t+2);  // 2 furos no fundo pra fita/alça de pescoço
+  translate([-6, -W/2-4, floor_t+4]) cube([12, wall+6, 9]);                   // passagem do cabo de carga do celular (frente, embaixo)
 }
 for (y=[-20, 20]) translate([-30, y-1, floor_t]) cube([60, 2, 2]);   // nervuras no fundo (protoboard não escorrega)
