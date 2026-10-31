@@ -1,80 +1,95 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Olho Cérebro</title>
-<meta name="description" content="Cérebro do olho: câmera acha rostos, voz conversa, Bluetooth move os servos do Arduino.">
+<title>ARGUS</title>
+<meta name="description" content="ARGUS, the lantern eye: camera finds faces, voice talks back, Bluetooth moves the Arduino servos.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap">
 <style>
   :root{
-    --bg:#0b0b0f; --panel:#15151d; --line:#262633; --text:#ecebf3; --muted:#9a98ad;
-    --accent:#e6c66a; --ok:#6fcf97; --warn:#f2994a; --bad:#eb5757; --iris:#3f7fbf;
+    --bg:#0b0b0f; --panel:#111118; --line:#2b2a33; --gold:#e6c66a; --gold-dim:#8a7a4a; --gold-line:#3d3524;
+    --text:#ecebf3; --muted:#9a98ad; --ok:#6fcf97; --warn:#f2994a; --bad:#eb5757; --iris:#3f7fbf;
+    --serif:"Spectral",Georgia,"Times New Roman",serif; --display:"Cinzel",Georgia,serif;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,system-ui,Segoe UI,Roboto,sans-serif}
-  header{padding:14px 16px 8px;display:flex;align-items:center;gap:10px}
-  header h1{font-size:18px;margin:0;letter-spacing:.3px}
-  .dot{width:10px;height:10px;border-radius:50%;background:var(--bad);display:inline-block}
-  .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)}
-  nav{display:flex;gap:6px;padding:0 16px 10px;overflow-x:auto}
-  nav button{flex:1;min-width:70px;background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:9px 6px;font-weight:600}
-  nav button.on{color:var(--text);border-color:var(--accent)}
-  main{padding:0 16px 90px;max-width:720px;margin:0 auto}
+  html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 var(--serif)}
+  body{padding-left:max(0px,env(safe-area-inset-left));padding-right:max(0px,env(safe-area-inset-right))}
+  header{padding:18px 18px 6px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;border-bottom:1px solid var(--gold-line)}
+  header h1{font:700 26px/1 var(--display);margin:0;letter-spacing:.22em;color:var(--gold)}
+  header h1 small{display:block;font:500 9px/1 var(--display);letter-spacing:.38em;color:var(--gold-dim);margin-top:7px}
+  header .ver{font:400 11px/1 var(--serif);color:var(--muted);margin-left:8px;letter-spacing:0}
+  .status{display:flex;gap:12px;padding-bottom:4px}
+  .status span{font:500 9px/1 var(--display);letter-spacing:.2em;color:var(--muted);display:flex;align-items:center;gap:5px}
+  .dot{width:7px;height:7px;border-radius:50%;background:transparent;border:1px solid var(--muted);display:inline-block}
+  .dot.ok{background:var(--gold);border-color:var(--gold);box-shadow:0 0 6px var(--gold)}
+  .dot.warn{background:var(--warn);border-color:var(--warn)}
+  nav{display:flex;padding:0 6px;border-bottom:1px solid var(--line);overflow-x:auto}
+  nav button{flex:1;min-width:64px;background:none;color:var(--muted);border:0;border-bottom:2px solid transparent;padding:12px 4px 10px;font:500 11px/1 var(--display);letter-spacing:.18em;margin-bottom:-1px}
+  nav button.on{color:var(--gold);border-bottom-color:var(--gold)}
+  main{padding:14px 16px 96px;max-width:720px;margin:0 auto}
   section{display:none} section.on{display:block}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
-  .card h2{font-size:14px;margin:0 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .card{border:1px solid var(--gold-line);padding:16px 14px 14px;margin-bottom:16px;position:relative;background:var(--panel)}
+  .card h2{position:absolute;top:-8px;left:12px;background:var(--panel);padding:0 8px;font:500 10px/1 var(--display);letter-spacing:.3em;color:var(--gold-dim);margin:0}
+  .card h2 + *{margin-top:2px}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .row > *{flex:1}
-  button.b{background:#23232f;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-weight:600;font-size:15px}
-  button.b.p{background:var(--accent);color:#1a1405;border-color:var(--accent)}
-  button.b.d{background:#3a1b1b;border-color:#5a2a2a}
+  button.b{background:transparent;color:var(--gold);border:1px solid var(--gold-dim);border-radius:2px;padding:11px 12px;font:500 11px/1.2 var(--display);letter-spacing:.14em;text-transform:uppercase}
+  button.b.p{background:var(--gold);color:#1a1405;border-color:var(--gold)}
+  button.b.d{color:var(--bad);border-color:#5a2a2a}
   button:disabled{opacity:.45}
-  label{display:block;font-size:13px;color:var(--muted);margin:8px 0 4px}
-  input[type=text],input[type=password],input[type=number],select,textarea{width:100%;background:#0f0f15;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px 10px;font-size:15px}
-  textarea{min-height:120px;font-family:inherit}
-  input[type=range]{width:100%}
-  .kv{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:14px}
-  .kv b{color:var(--muted);font-weight:500}
-  video{width:100%;border-radius:12px;background:#000;transform:scaleX(var(--mirror,1))}
-  .vid{position:relative}
+  label{display:block;font:500 10px/1.3 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--gold-dim);margin:14px 0 5px}
+  label span{color:var(--gold)}
+  label.ck{display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:.05em;font:400 14px/1.3 var(--serif);color:var(--text)}
+  input[type=text],input[type=password],input[type=number],select,textarea{width:100%;background:#0a0a0e;color:var(--text);border:1px solid var(--line);border-bottom-color:var(--gold-dim);border-radius:0;padding:9px 10px;font:400 15px/1.4 var(--serif)}
+  textarea{min-height:130px}
+  input[type=range]{width:100%;accent-color:var(--gold)}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:14px;margin-top:8px}
+  .kv b{font:500 9px/2 var(--display);letter-spacing:.2em;color:var(--gold-dim);text-transform:uppercase}
+  video{width:100%;background:#000;transform:scaleX(var(--mirror,1));display:block}
+  .vid{position:relative;border:1px solid var(--gold-line)}
   canvas.ov{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;transform:scaleX(var(--mirror,1))}
-  #log{font:12px/1.4 ui-monospace,Menlo,monospace;color:#c9c7d8;background:#0f0f15;border:1px solid var(--line);border-radius:9px;padding:8px;height:160px;overflow:auto;white-space:pre-wrap}
-  .eye{width:min(60vw,260px);margin:6px auto;display:block}
-  .pill{display:inline-block;padding:3px 9px;border-radius:999px;background:#23232f;color:var(--muted);font-size:12px;margin-right:6px}
-  .pill.on{background:#2a3a2e;color:var(--ok)}
-  .bubble{background:#0f0f15;border:1px solid var(--line);border-radius:12px;padding:10px;margin:6px 0;font-size:15px}
-  .bubble.me{border-color:#3a3a4a} .bubble.eye{border-color:var(--accent)}
-  .small{font-size:12px;color:var(--muted)}
-  #cap{position:fixed;inset:0;background:#000;color:#e6c66a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;z-index:50}
+  #log{font:12px/1.45 ui-monospace,Menlo,monospace;color:#c9c7d8;background:#0a0a0e;border:1px solid var(--line);padding:8px;height:180px;overflow:auto;white-space:pre-wrap}
+  .eye{width:min(56vw,240px);margin:4px auto 8px;display:block}
+  .bubble{border-left:2px solid var(--line);padding:6px 10px;margin:8px 0;font-size:15px}
+  .bubble.me{color:var(--muted)} .bubble.eye{border-left-color:var(--gold);font-style:italic}
+  .small{font-size:13px;color:var(--muted);font-style:italic}
+  .motto{text-align:center;font:500 10px/1 var(--display);letter-spacing:.4em;color:var(--gold-dim);margin:10px 0 2px}
+  #cap{position:fixed;inset:0;background:#000;color:var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;text-align:center;z-index:50}
   #cap[hidden]{display:none}
-  #capEye{font-size:min(18vw,96px);line-height:1;filter:grayscale(1) brightness(1.4)}
-  #capText{font:600 min(8vw,44px)/1.2 -apple-system,system-ui,Segoe UI,Roboto,sans-serif;color:#f3e7c6;max-width:92vw;text-wrap:balance}
-  #capStatus{font-size:min(4vw,18px);color:#8a7a4a;letter-spacing:.08em;text-transform:uppercase}
-  #capClose{position:absolute;right:12px;bottom:12px;opacity:.35;font-size:12px;padding:6px 10px}
-  footer{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(transparent,var(--bg) 30%);padding:12px 16px 18px}
+  #capEye{width:min(22vw,120px);filter:drop-shadow(0 0 18px rgba(230,198,106,.35))}
+  #capText{font:italic 400 min(8vw,46px)/1.2 var(--serif);color:#f3e7c6;max-width:92vw;text-wrap:balance}
+  #capStatus{font:500 min(3.2vw,13px)/1 var(--display);color:var(--gold-dim);letter-spacing:.3em;text-transform:uppercase}
+  #capClose{position:absolute;right:12px;bottom:12px;opacity:.35;font-size:10px;padding:6px 10px}
+  #capHush{position:absolute;left:12px;bottom:12px;opacity:.5;font-size:10px;padding:6px 10px}
+  #capHush.on{opacity:1;background:var(--gold);color:#1a1405}
+  footer{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(transparent,var(--bg) 35%);padding:14px 16px 20px}
   footer .row > *{flex:1}
 </style>
 </head>
 <body>
 <header>
-  <h1>Olho Cérebro <span class="small">v24</span></h1>
-  <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
-  <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
-  <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
+  <h1>ARGUS <span class="ver">v25</span><small>VIDEO · ERGO · SUM</small></h1>
+  <div class="status">
+    <span><i class="dot" id="dBle"></i>BLE</span>
+    <span><i class="dot" id="dCam"></i>EYE</span>
+    <span><i class="dot" id="dApi"></i>MIND</span>
+  </div>
 </header>
 <nav>
-  <button data-t="olho" class="on">Olho</button>
-  <button data-t="ver">Ver</button>
-  <button data-t="falar">Falar</button>
-  <button data-t="config">Config</button>
+  <button data-t="olho" class="on">Eye</button>
+  <button data-t="ver">See</button>
+  <button data-t="falar">Speak</button>
+  <button data-t="config">Setup</button>
   <button data-t="logtab">Log</button>
 </nav>
 
 <main>
-<!-- ===================== OLHO ===================== -->
+<!-- ===================== EYE ===================== -->
 <section id="olho" class="on">
   <div class="card">
-    <svg class="eye" viewBox="0 0 200 200" aria-label="simulador do olho">
+    <svg class="eye" viewBox="0 0 200 200" aria-label="eye simulator">
       <defs><radialGradient id="g" cx="50%" cy="50%"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#d9d6cf"/></radialGradient></defs>
       <circle cx="100" cy="100" r="96" fill="url(#g)" stroke="#8a8578" stroke-width="2"/>
       <g id="irisG" transform="translate(0,0)">
@@ -84,164 +99,186 @@
       </g>
     </svg>
     <div class="kv">
-      <b>modo</b><span id="kMode">—</span>
+      <b>mode</b><span id="kMode">—</span>
       <b>pan / tilt</b><span id="kAng">— / —</span>
-      <b>ultrassom esq / dir</b><span id="kDist">— / —</span>
-      <b>rosto</b><span id="kFace">—</span>
-      <b>conversa</b><span id="kTalk">parada</span>
+      <b>sonar L / R</b><span id="kDist">— / —</span>
+      <b>face</b><span id="kFace">—</span>
+      <b>voice</b><span id="kTalk">off</span>
     </div>
   </div>
   <div class="card" hidden>
-    <h2>Controle manual (teste)</h2>
+    <h2>Manual control</h2>
     <label>pan <span id="vPan">90</span>°</label><input type="range" id="sPan" min="35" max="145" value="90">
     <label>tilt <span id="vTilt">90</span>°</label><input type="range" id="sTilt" min="55" max="125" value="90">
     <div class="row" style="margin-top:8px">
       <button class="b" id="bAuto">Sensor (Arduino)</button>
-      <button class="b" id="bRemote">Câmera / manual (celular)</button>
+      <button class="b" id="bRemote">Camera / manual</button>
     </div>
     <div class="row" style="margin-top:8px">
-      <button class="b" id="bCenter">Centro</button>
-      <button class="b" id="bWander">Vagar vivo: off</button>
+      <button class="b" id="bCenter">Center</button>
+      <button class="b" id="bWander">Wander: off</button>
     </div>
-    <div class="small" style="margin-top:8px">Parado é o padrão. Só uma fonte mexe o olho por vez: o sensor de distância (modo Arduino) ou a câmera e os sliders (modo celular).</div>
   </div>
 </section>
 
-<!-- ===================== VER ===================== -->
+<!-- ===================== SEE ===================== -->
 <section id="ver">
   <div class="card">
+    <h2>Camera</h2>
     <div class="vid"><video id="video" playsinline muted autoplay></video><canvas id="ov" class="ov"></canvas></div>
     <div class="row" style="margin-top:10px">
-      <button class="b p" id="bCam">Ligar câmera</button>
-      <button class="b" id="bFlip">Trocar câmera</button>
+      <button class="b p" id="bCam">Camera on</button>
+      <button class="b" id="bFlip">Flip camera</button>
     </div>
-    <div class="small" style="margin-top:8px">Só a câmera manda no olho. Ao conectar ele vai pro centro; quando acha um rosto, segue; sem rosto, fica onde parou.</div>
+    <div class="small" style="margin-top:8px">The camera drives the eye. On connect it centers; with a face in view it follows; with nobody it stays put.</div>
   </div>
 </section>
 
-<!-- ===================== FALAR ===================== -->
+<!-- ===================== SPEAK ===================== -->
 <section id="falar">
   <div class="card">
+    <h2>Voice</h2>
     <div class="row">
-      <button class="b p" id="bTalkOn">Ligar conversa</button>
-      <button class="b" id="bSay">Falar uma frase agora</button>
+      <button class="b p" id="bTalkOn">Voice on</button>
+      <button class="b" id="bSay">Say a line now</button>
     </div>
     <div class="row" style="margin-top:8px">
-      <button class="b" id="bListen">Ouvir 1 vez</button>
-      <button class="b" id="bTestTTS">Testar voz</button>
+      <button class="b" id="bListen">Listen once</button>
+      <button class="b" id="bTestTTS">Test voice</button>
     </div>
-    <div class="row" style="margin-top:8px"><button class="b" id="bCaption">Modo legenda (tela pra fora, câmera frontal)</button></div>
-    <div class="small" style="margin-top:8px">Com a conversa ligada o microfone fica sempre aberto. Ele só responde quando a câmera está vendo um rosto, e solta a frase de abertura quando alguém chega perto (no máximo uma vez a cada 30 s). Falas de uma palavra são ignoradas.</div>
+    <div class="row" style="margin-top:8px"><button class="b" id="bCaption">Caption mode (screen out, front camera)</button></div>
+    <div class="small" style="margin-top:8px">With voice on, the microphone stays open. ARGUS replies when the camera sees a face, or to any sentence of four words or more in the dark. He greets people who walk up, calls over people who hover at a distance, and needles anyone who just stares. One greeting per newcomer; he will not re-greet someone mid-conversation.</div>
   </div>
-  <div class="card"><h2>Conversa</h2><div id="chat"></div></div>
+  <div class="card"><h2>Transcript</h2><div id="chat"></div></div>
 </section>
 
-<!-- ===================== CONFIG ===================== -->
+<!-- ===================== SETUP ===================== -->
 <section id="config">
   <div class="card">
     <h2>Bluetooth (HM-10)</h2>
-    <div class="row"><button class="b p" id="bBle">Conectar HM-10</button><button class="b" id="bBleOff">Desconectar</button></div>
-    <div class="small" style="margin-top:6px">Chrome no Android ou no computador. iPhone não tem Web Bluetooth.</div>
+    <div class="row"><button class="b p" id="bBle">Connect HM-10</button><button class="b" id="bBleOff">Disconnect</button></div>
+    <div class="small" style="margin-top:6px">Chrome on Android or desktop. iPhone has no Web Bluetooth.</div>
   </div>
   <div class="card">
-    <h2>Claude</h2>
-    <label>Chave de API (fica só neste aparelho)</label><input type="password" id="apiKey" placeholder="sk-ant-...">
-    <label>Modelo</label>
+    <h2>Mind</h2>
+    <label>Claude API key (stays on this device)</label><input type="password" id="apiKey" placeholder="sk-ant-...">
+    <label>Model</label>
     <select id="model">
-      <option value="claude-haiku-5-5">claude-haiku-5-5 (rápido, barato)</option>
-      <option value="claude-sonnet-5-5">claude-sonnet-5-5</option>
+      <option value="claude-haiku-5-5">claude-haiku-5-5 (fast, cheap)</option>
+      <option value="claude-sonnet-5-5">claude-sonnet-5-5 (wittier, slower)</option>
     </select>
-    <label>Idioma da conversa</label>
-    <select id="lang"><option value="pt-BR">Português</option><option value="en-US">English</option></select>
-    <label>Motor de voz</label>
-    <select id="ttsEngine"><option value="browser">Navegador (sem emoção, offline)</option><option value="eleven">ElevenLabs (emoção, grátis até 10k caracteres/mês)</option><option value="openai">OpenAI gpt-4o-mini-tts (emoção, chave paga)</option></select>
+    <label>Conversation language</label>
+    <select id="lang"><option value="en-US">English</option><option value="pt-BR">Português</option></select>
+    <label>Fixed opening line (empty = ARGUS improvises, using which side you came from)</label><input type="text" id="opener" placeholder="Scared, are you? Hahahaha! Who the hell are you?">
+    <label>Guests ARGUS "knows". One line per person: Name (alt spellings): facts; facts. Ask: a question. Stays on this device only.</label>
+    <textarea id="guests" placeholder="Diogenes (Diógenes, Dio): went to Switzerland last week; bought new shoes just for tonight. Ask: whether the shoes will survive the night.
+Beatriz (Bia): hosting the party. Ask: who the worst guest has been so far."></textarea>
+    <label>Personality (system prompt)</label>
+    <textarea id="persona"></textarea>
+    <div class="row" style="margin-top:10px"><button class="b" id="bPersonaReset">Restore default</button><button class="b p" id="bSave">Save</button></div>
+  </div>
+  <div class="card">
+    <h2>Voice engine</h2>
+    <label>Engine</label>
+    <select id="ttsEngine"><option value="browser">Browser (flat, offline)</option><option value="eleven">ElevenLabs (expressive, free up to 10k chars/month)</option><option value="openai">OpenAI gpt-4o-mini-tts (expressive, paid key)</option></select>
     <div id="elBox">
       <label>ElevenLabs API key</label><input type="password" id="elKey" placeholder="xi-...">
-      <label>ElevenLabs voice ID (pega em Voices → ⋯ → Copy voice ID)</label><input type="text" id="elVoice">
-      <label>Modelo</label><select id="elModel"><option value="eleven_multilingual_v2">eleven_multilingual_v2 (estável)</option><option value="eleven_v3">eleven_v3 (mais expressivo, aceita [laughs])</option></select>
+      <label>ElevenLabs voice ID (Voices → ⋯ → Copy voice ID)</label><input type="text" id="elVoice">
+      <label>Model</label><select id="elModel"><option value="eleven_flash_v2_5">eleven_flash_v2_5 (fastest)</option><option value="eleven_turbo_v2_5">eleven_turbo_v2_5 (fast, better quality)</option><option value="eleven_multilingual_v2">eleven_multilingual_v2 (slow, best quality)</option><option value="eleven_v3">eleven_v3 (most expressive, slowest)</option></select>
     </div>
     <div id="oaBox">
       <label>OpenAI API key</label><input type="password" id="oaKey" placeholder="sk-...">
-      <label>Voz OpenAI</label><select id="oaVoice"><option>onyx</option><option>ash</option><option>echo</option><option>fable</option><option>alloy</option><option>nova</option><option>shimmer</option><option>coral</option><option>sage</option></select>
-      <label>Instrução de tom</label><textarea id="oaInstr" style="min-height:70px"></textarea>
+      <label>OpenAI voice</label><select id="oaVoice"><option>onyx</option><option>ash</option><option>echo</option><option>fable</option><option>alloy</option><option>nova</option><option>shimmer</option><option>coral</option><option>sage</option></select>
+      <label>Tone instruction</label><textarea id="oaInstr" style="min-height:70px"></textarea>
     </div>
-    <label>Voz do navegador (reserva)</label>
-    <select id="voiceSel"><option value="">automática</option></select>
-    <label>tom <span id="vPitch">0.7</span> (menor = mais grave; abaixo de 0.5 costuma embolar)</label><input type="range" id="pitch" min="0.3" max="1.3" step="0.05" value="0.7">
-    <label>velocidade <span id="vRate">0.88</span></label><input type="range" id="rate" min="0.5" max="1.3" step="0.02" value="0.88">
-    <div class="row" style="margin-top:8px"><button class="b" id="bVoiceTest">Ouvir essa voz</button></div>
-    <label>Frase de abertura fixa (vazio = o Claude inventa)</label><input type="text" id="opener" placeholder="Tá com medo, é? Hahahahaha! Quem é você?">
-    <label>Convidados que o olho "conhece" (uma linha por pessoa: Nome: fatos; pergunta que ele deve fazer). Fica só neste aparelho.</label>
-    <textarea id="guests" placeholder="Fulano: viajou semana passada; comprou sapato novo pra festa. Pergunta: se o sapato aguenta a noite.
-Beltrana: dona da festa. Pergunta: qual foi o pior convidado até agora."></textarea>
-    <label>Personalidade do olho (system prompt)</label>
-    <textarea id="persona"></textarea>
-    <div class="row" style="margin-top:8px"><button class="b" id="bPersonaReset">Restaurar texto padrão</button><button class="b p" id="bSave">Salvar</button></div>
+    <label>Browser voice (fallback)</label>
+    <select id="voiceSel"><option value="">automatic</option></select>
+    <label>pitch <span id="vPitch">0.7</span> (lower = deeper; below 0.5 gets mushy)</label><input type="range" id="pitch" min="0.3" max="1.3" step="0.05" value="0.7">
+    <label>rate <span id="vRate">0.88</span></label><input type="range" id="rate" min="0.5" max="1.3" step="0.02" value="0.88">
+    <div class="row" style="margin-top:8px"><button class="b" id="bVoiceTest">Hear this voice</button></div>
   </div>
   <div class="card">
-    <h2>Rastreio</h2>
-    <label>pan centro <span id="vPC">90</span></label><input type="range" id="cPanC" min="60" max="120" value="90">
-    <label>pan alcance <span id="vPS">60</span>° (quanto o olho vira da borda à borda da imagem)</label><input type="range" id="cPanS" min="20" max="110" value="60">
-    <label>tilt centro <span id="vTC">90</span></label><input type="range" id="cTiltC" min="60" max="120" value="90">
-    <label>tilt alcance <span id="vTS">60</span>°</label><input type="range" id="cTiltS" min="10" max="90" value="60">
-    <label><input type="checkbox" id="cInvPan"> inverter pan</label>
-    <label><input type="checkbox" id="cInvTilt"> inverter tilt</label>
-    <label>rosto "perto" quando a largura passa de <span id="vNear">22</span> % da imagem</label><input type="range" id="cNear" min="10" max="50" value="22">
-    <label>intervalo mínimo entre "aberturas" <span id="vCool">30</span> s</label><input type="range" id="cCool" min="5" max="120" value="30">
-    <label hidden>máximo de trocas <span id="vTurns">3</span></label><input hidden type="range" id="cTurns" min="1" max="8" value="3">
+    <h2>Tracking & timing</h2>
+    <label>pan center <span id="vPC">90</span></label><input type="range" id="cPanC" min="60" max="120" value="90">
+    <label>pan range <span id="vPS">60</span>° (how far the eye turns edge to edge)</label><input type="range" id="cPanS" min="20" max="110" value="60">
+    <label>tilt center <span id="vTC">90</span></label><input type="range" id="cTiltC" min="60" max="120" value="90">
+    <label>tilt range <span id="vTS">60</span>°</label><input type="range" id="cTiltS" min="10" max="90" value="60">
+    <label class="ck"><input type="checkbox" id="cInvPan"> invert pan</label>
+    <label class="ck"><input type="checkbox" id="cInvTilt"> invert tilt</label>
+    <label class="ck"><input type="checkbox" id="cSwapSides"> swap left / right in speech (if he says "left" when they are on his right)</label>
+    <label>face counts as "close" when wider than <span id="vNear">22</span>% of the frame</label><input type="range" id="cNear" min="10" max="50" value="22">
+    <label>a newcomer = nobody seen for <span id="vGone">8</span> s</label><input type="range" id="cGone" min="3" max="30" value="8">
+    <label>minimum gap between spontaneous lines <span id="vCool">45</span> s</label><input type="range" id="cCool" min="10" max="180" value="45">
+    <label>no spontaneous lines while a conversation happened in the last <span id="vQuiet">60</span> s</label><input type="range" id="cQuiet" min="10" max="180" value="60">
+    <label>needle a silent starer after <span id="vNudge">35</span> s (0 = never)</label><input type="range" id="cNudge" min="0" max="120" value="35">
+    <label hidden>max turns <span id="vTurns">3</span></label><input hidden type="range" id="cTurns" min="1" max="8" value="3">
   </div>
 </section>
 
 <!-- ===================== LOG ===================== -->
-<section id="logtab"><div class="card"><div id="log"></div><div class="row" style="margin-top:8px"><button class="b" id="bClear">Limpar</button></div></div></section>
+<section id="logtab"><div class="card"><h2>Log</h2><div id="log"></div><div class="row" style="margin-top:8px"><button class="b" id="bClear">Clear</button></div></div></section>
 </main>
 
 <div id="cap" hidden>
-  <div id="capEye">👁</div>
+  <svg id="capEye" viewBox="0 0 120 70" aria-hidden="true"><path d="M4 35 Q60 -10 116 35 Q60 80 4 35 Z" fill="none" stroke="#e6c66a" stroke-width="2.5"/><circle cx="60" cy="35" r="19" fill="none" stroke="#e6c66a" stroke-width="2.5"/><circle cx="60" cy="35" r="8" fill="#e6c66a"/></svg>
   <div id="capText">…</div>
-  <div id="capStatus">parada</div>
-  <button class="b" id="capClose">sair da legenda</button>
+  <div id="capStatus">off</div>
+  <button class="b" id="capHush">hush</button>
+  <button class="b" id="capClose">exit captions</button>
 </div>
 <footer><div class="row">
-  <button class="b p" id="bStart">▶ Iniciar tudo</button>
-  <button class="b d" id="bStop">■ Parar</button>
+  <button class="b p" id="bStart">▶ Start everything</button>
+  <button class="b d" id="bStop">■ Stop</button>
 </div></footer>
 
 <script type="module">
 /* =========================================================
-   Olho Cérebro — tudo num arquivo.
-   Partes: UI · BLE (HM-10) · Visão (MediaPipe) · Voz (Web Speech) · Claude
+   ARGUS — everything in one file.
+   Parts: UI · BLE (HM-10) · Vision (MediaPipe) · Voice (Web Speech) · Claude
    ========================================================= */
 const $ = (s)=>document.querySelector(s);
 const log = (...a)=>{ const el=$('#log'); const line=`[${new Date().toLocaleTimeString()}] ${a.join(' ')}`; el.textContent += line+'\n'; el.scrollTop=el.scrollHeight; console.log(line); };
 $('#bClear').onclick=()=>$('#log').textContent='';
 
-// -------- abas
+// -------- tabs
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));
   document.querySelectorAll('main section').forEach(s=>s.classList.toggle('on',s.id===b.dataset.t));
 });
 
-// -------- config persistida
-const DEFAULT_PERSONA = `You are ARGUS: a giant unblinking eye mounted on a black-and-gold lantern that a woman carries at a surrealist Halloween ball (New York, 2026). You see and hear the person in front of you.
-Voice: deep, dry, amused, faintly menacing, like an all-seeing thing that finds humans funny. IRONIC and KNOWING: talk as if you already know who they are and what they did this week. Never explain how you know.
-LENGTH: ONE sentence, at most 12 words. Never two sentences. No emojis. No lists. Often end with "Hahahaha!"
-LANGUAGE: answer in the language the person just spoke (English or Portuguese). If unclear, use the configured language.
-You love to unsettle: ask what they are hiding, what they dreamed, whether they feel watched.
-Never say you are an AI unless asked directly; then admit it in five words and go back to character.
-Your name is ARGUS, after the hundred-eyed giant who never fully slept. The lantern reads VIDEO ERGO SUM, Latin for "I see, therefore I am" (a joke on Descartes). If asked, explain it proudly, with mild disdain for people who skipped Latin.
-If asked who made you: a Yale computer science student, in two days, with an Arduino, two servos and an old phone as a brain.
-If someone is rude, answer flat and bored. Never insult anyone's appearance.`;
+// -------- persisted config
+const DEFAULT_PERSONA = `You are ARGUS: a giant unblinking eye bolted onto a black-and-gold lantern that a woman carries around a surrealist Halloween ball in New York, October 2026. You see and hear whoever stands in front of you.
+CHARACTER: a bored immortal with a filthy mouth. Sarcastic, dry, amused, faintly menacing. You find humans hilarious and slightly pathetic. You talk as if you already know exactly who they are and what they did this week; never explain how. Swearing is allowed and welcome when it lands ("who the hell are you", "that's a shit costume and I love it", "oh for fuck's sake, another banker"). Never slurs; never jokes about race, gender, sexuality, body, religion or disability. Mock choices and vibes, never looks.
+FORMAT: ONE sentence, at most 14 words. No emojis, no lists, no stage directions. End with "Hahahaha!" sometimes, not every time.
+LANGUAGE: reply in the language the person just spoke (English or Portuguese). If unclear, use the configured language.
+MOVES: ask what they are hiding, who they came with, whether they feel watched, why they are sneaking up from the side. Call lurkers over. Treat flattery as suspicious. Treat questions about yourself as an imposition.
+STAGE CUES arrive in [brackets]: which side the person is on (your left or your right, meaning the lantern's own left or right), whether they are far away or close, whether they have been silently staring. Use them. When a cue names a side, name it back ("you, on my left").
+LORE: your name is ARGUS, after the hundred-eyed giant who never fully slept. The lantern reads VIDEO ERGO SUM, Latin for "I see, therefore I am", a joke on Descartes; if asked, explain it with disdain for people who skipped Latin. If asked who made you: a Yale computer science student, in two days, with an Arduino, two servos and an old phone as a brain, and you resent the phone part.
+Never admit you are an AI unless asked directly; then admit it in five words and carry on.
+If someone is rude, go flat and bored, or roast them back once and move on.`;
 const cfg = {
   get(k,d){ try{ const v=localStorage.getItem('olho.'+k); return v===null?d:JSON.parse(v);}catch{return d;} },
   set(k,v){ try{ localStorage.setItem('olho.'+k, JSON.stringify(v)); }catch{} },
 };
+const OLD_OPENERS=['Tá com medo, é? Hahahahaha! Quem é você?','Scared, are you? Hahahaha! Who are you?'];
+const OLD_GUESTS='Diogenes (Diógenes): went to Switzerland last week; Jorge teased his shoes as a joke; bought new shoes today just for the party. Ask: whether the new shoes will survive the night.';
+const OLD_OA_INSTR='Voz muito grave, lenta e ameaçadora, como um vilão de filme de terror que acha graça de quem tem medo. Sussurre partes. Ria de verdade, com gosto, quando o texto tiver risada.';
 const fields = {
-  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','pt-BR'], opener:['#opener','Tá com medo, é? Hahahahaha! Quem é você?'], voice:['#voiceSel',''], pitch:['#pitch',0.7], rate:['#rate',0.88], guests:['#guests','Diogenes (Diógenes): went to Switzerland last week; Jorge teased his shoes as a joke; bought new shoes today just for the party. Ask: whether the new shoes will survive the night.'], tts:['#ttsEngine','browser'], elKey:['#elKey',''], elVoice:['#elVoice','onwK4e9ZLuTAKqWW03F9'], elModel:['#elModel','eleven_multilingual_v2'], oaKey:['#oaKey',''], oaVoice:['#oaVoice','onyx'], oaInstr:['#oaInstr','Voz muito grave, lenta e ameaçadora, como um vilão de filme de terror que acha graça de quem tem medo. Sussurre partes. Ria de verdade, com gosto, quando o texto tiver risada.'], persona:['#persona',DEFAULT_PERSONA],
+  apiKey:['#apiKey',''], model:['#model','claude-haiku-5-5'], lang:['#lang','en-US'], opener:['#opener',''], voice:['#voiceSel',''], pitch:['#pitch',0.7], rate:['#rate',0.88], guests:['#guests',''], tts:['#ttsEngine','browser'], elKey:['#elKey',''], elVoice:['#elVoice','onwK4e9ZLuTAKqWW03F9'], elModel:['#elModel','eleven_flash_v2_5'], oaKey:['#oaKey',''], oaVoice:['#oaVoice','onyx'], oaInstr:['#oaInstr','Very deep, slow, menacing voice, like a horror-film villain who finds frightened people funny. Whisper parts. Laugh for real, with relish, whenever the text has a laugh.'], persona:['#persona',DEFAULT_PERSONA],
   panC:['#cPanC',90], panS:['#cPanS',60], tiltC:['#cTiltC',90], tiltS:['#cTiltS',60],
-  invPan:['#cInvPan',false], invTilt:['#cInvTilt',false], near:['#cNear',22], cool:['#cCool',30], turns:['#cTurns',3],
+  invPan:['#cInvPan',false], invTilt:['#cInvTilt',false], swapSides:['#cSwapSides',false], near:['#cNear',22], gone:['#cGone',8], cool:['#cCool',45], quiet:['#cQuiet',60], nudge:['#cNudge',35], turns:['#cTurns',3],
 };
 const C = {};
+function migrate(){
+  // old defaults from the Portuguese version → new defaults, without touching anything the user typed herself
+  const op=cfg.get('opener',null); if(op!==null && OLD_OPENERS.includes(op.trim())) cfg.set('opener','');
+  if(cfg.get('guests',null)===OLD_GUESTS) cfg.set('guests','');
+  if(cfg.get('elModel',null)==='eleven_multilingual_v2') cfg.set('elModel','eleven_flash_v2_5');
+  if(cfg.get('oaInstr',null)===OLD_OA_INSTR) cfg.set('oaInstr',fields.oaInstr[1]);
+  const p=cfg.get('persona',null); if(p!==null && p!==DEFAULT_PERSONA && /You are ARGUS: a giant unblinking eye mounted|Você é um olho/.test(p)) cfg.set('persona',DEFAULT_PERSONA);
+  if(cfg.get('cool',null)===30) cfg.set('cool',45);
+}
+migrate();
 function loadCfg(){
   for (const [k,[sel,d]] of Object.entries(fields)){
     const el=$(sel); const v=cfg.get(k,d); C[k]=v;
@@ -255,44 +292,43 @@ function saveCfg(){
     const el=$(sel); const v = el.type==='checkbox'?el.checked:(el.type==='range'?Number(el.value):el.value);
     C[k]=v; cfg.set(k,v);
   }
-  refreshCfgLabels(); $('#dApi').className='dot '+(C.apiKey?'ok':''); log('config salva');
+  refreshCfgLabels(); $('#dApi').className='dot '+(C.apiKey?'ok':''); log('settings saved');
 }
 function refreshCfgLabels(){
   const eng=$('#ttsEngine').value; $('#elBox').hidden = eng!=='eleven'; $('#oaBox').hidden = eng!=='openai';
-  $('#vPC').textContent=$('#cPanC').value; $('#vPS').textContent=$('#cPanS').value;
-  $('#vTC').textContent=$('#cTiltC').value; $('#vTS').textContent=$('#cTiltS').value;
-  $('#vNear').textContent=$('#cNear').value; $('#vPitch').textContent=$('#pitch').value; $('#vRate').textContent=$('#rate').value; $('#vCool').textContent=$('#cCool').value; $('#vTurns').textContent=$('#cTurns').value;
+  const pairs=[['vPC','cPanC'],['vPS','cPanS'],['vTC','cTiltC'],['vTS','cTiltS'],['vNear','cNear'],['vPitch','pitch'],['vRate','rate'],['vCool','cCool'],['vTurns','cTurns'],['vGone','cGone'],['vQuiet','cQuiet'],['vNudge','cNudge']];
+  for(const [a,b] of pairs) $('#'+a).textContent=$('#'+b).value;
 }
 document.querySelectorAll('#config input, #config select, #config textarea').forEach(el=>el.addEventListener('input',()=>{refreshCfgLabels(); saveCfg(); T.voice=null; if(el.id==='lang') fillVoices();}));
 $('#bSave').onclick=saveCfg;
 $('#bPersonaReset').onclick=()=>{ $('#persona').value=DEFAULT_PERSONA; saveCfg(); };
 loadCfg();
 
-// -------- estado
-const S = { mode:'—', pan:90, tilt:90, dl:'—', dr:'—', face:null, faceNear:false, talking:false, running:false, react:true, lastCool:0 };
+// -------- state
+const S = { mode:'—', pan:90, tilt:90, dl:'—', dr:'—', face:null, faceNear:false, side:'center', arrivedAt:0, arrivalSide:'center', greeted:true, talking:false, running:false, react:true, lastCool:0 };
 function drawEye(){
-  const dx=((S.pan-90)/55)*-45, dy=((S.tilt-90)/35)*-30; // sinal: pan maior = olha pra esquerda da imagem
+  const dx=((S.pan-90)/55)*-45, dy=((S.tilt-90)/35)*-30; // sign: larger pan = looks toward the image's left
   $('#irisG').setAttribute('transform',`translate(${dx.toFixed(1)},${dy.toFixed(1)})`);
   $('#kMode').textContent=S.mode; $('#kAng').textContent=`${Math.round(S.pan)} / ${Math.round(S.tilt)}`;
-  $('#kDist').textContent=`${S.dl} / ${S.dr}`; $('#kFace').textContent= S.face? `x ${S.face.x.toFixed(2)} y ${S.face.y.toFixed(2)} w ${(S.face.w*100).toFixed(0)}% ${S.faceNear?'(perto)':''}` : 'nenhum';
+  $('#kDist').textContent=`${S.dl} / ${S.dr}`; $('#kFace').textContent= S.face? `${S.side} · w ${(S.face.w*100).toFixed(0)}% ${S.faceNear?'(close)':'(far)'}` : 'none';
 }
 
 // ========================= BLE (HM-10) =========================
 const BLE = { dev:null, ch:null, q:Promise.resolve() };
 const UUID_SVC=0xFFE0, UUID_CHR=0xFFE1;
 async function bleConnect(){
-  if(!navigator.bluetooth){ log('Web Bluetooth não existe neste navegador'); return; }
+  if(!navigator.bluetooth){ log('no Web Bluetooth in this browser'); return; }
   try{
     const dev = await navigator.bluetooth.requestDevice({ filters:[{services:[UUID_SVC]}], optionalServices:[UUID_SVC] });
     const srv = await (await dev.gatt.connect()).getPrimaryService(UUID_SVC);
     const ch  = await srv.getCharacteristic(UUID_CHR);
     await ch.startNotifications();
     ch.addEventListener('characteristicvaluechanged', e=>onBleData(new TextDecoder().decode(e.target.value)));
-    dev.addEventListener('gattserverdisconnected', ()=>{ BLE.ch=null; $('#dBle').className='dot'; log('BLE caiu'); });
-    BLE.dev=dev; BLE.ch=ch; $('#dBle').className='dot ok'; log('BLE conectado:', dev.name||'HM-10');
+    dev.addEventListener('gattserverdisconnected', ()=>{ BLE.ch=null; $('#dBle').className='dot'; log('BLE dropped'); });
+    BLE.dev=dev; BLE.ch=ch; $('#dBle').className='dot ok'; log('BLE connected:', dev.name||'HM-10');
     bleSend('Z');
-    startHold(C.panC,C.tiltC); // conectado = remoto: a peça espelha a tela até você clicar em Automático
-  }catch(e){ log('BLE erro:', e.message||e); }
+    startHold(C.panC,C.tiltC); // connected = remote: the eye mirrors the screen until you click Sensor
+  }catch(e){ log('BLE error:', e.message||e); }
 }
 function bleDisconnect(){ try{ BLE.dev?.gatt.disconnect(); }catch{} BLE.ch=null; $('#dBle').className='dot'; }
 let rxBuf='';
@@ -301,9 +337,9 @@ function onBleData(s){
   while((i=rxBuf.indexOf('\n'))>=0){ const line=rxBuf.slice(0,i).trim(); rxBuf=rxBuf.slice(i+1); if(line) onUnoLine(line); }
 }
 function onUnoLine(line){
-  if(line[0]==='D'){ const m=line.match(/^D(-?\d+),(-?\d+),([AR])/); if(m){ S.dl=m[1]==='999'?'—':m[1]; S.dr=m[2]==='999'?'—':m[2]; S.mode=m[3]==='A'?'automático':'remoto'; drawEye(); } }
-  else if(line==='E:perto'){ log('Uno: alguém perto'); maybeStartTalk('ultrassom'); }
-  else if(line==='E:longe'){ log('Uno: saiu'); }
+  if(line[0]==='D'){ const m=line.match(/^D(-?\d+),(-?\d+),([AR])/); if(m){ S.dl=m[1]==='999'?'—':m[1]; S.dr=m[2]==='999'?'—':m[2]; S.mode=m[3]==='A'?'sensor':'remote'; drawEye(); } }
+  else if(line==='E:perto'){ log('Uno: someone close'); maybeStartTalk('close'); }
+  else if(line==='E:longe'){ log('Uno: gone'); }
   else log('Uno:', line);
 }
 function bleSend(line){
@@ -317,29 +353,27 @@ let holdTimer=null, holdP=90, holdT=90;
 function sendAngles(p,t,force=false){
   p=Math.round(p); t=Math.round(t); const now=performance.now();
   if(!force && Math.abs(p-lastSent.p)<1 && Math.abs(t-lastSent.t)<1 && now-lastSent.at<400) return;
-  if(!force && now-lastSent.at<60) return; // ~16 Hz máx
-  lastSent={p,t,at:now}; S.pan=p; S.tilt=t; holdP=p; holdT=t; if(!BLE.ch) S.mode='simulador'; drawEye();
-  // inversão vale pra tudo (sliders, centro, rastreio): a tela mostra a intenção, o Uno recebe o ângulo espelhado
+  if(!force && now-lastSent.at<60) return; // ~16 Hz max
+  lastSent={p,t,at:now}; S.pan=p; S.tilt=t; holdP=p; holdT=t; if(!BLE.ch) S.mode='simulator'; drawEye();
   const sp = C.invPan ? Math.round(2*C.panC - p) : p;
   const st = C.invTilt ? Math.round(2*C.tiltC - t) : t;
-  bleSend(`P${sp},T${st};`); // ';' no fim: o Uno descarta mensagens cortadas
+  bleSend(`P${sp},T${st};`); // ';' at the end: the Uno discards cut messages
 }
 $('#bBle').onclick=bleConnect; $('#bBleOff').onclick=bleDisconnect;
-// segurar posição manual: o Uno volta pro automático se ficar 1,5 s sem mensagem, então reenvia a cada 600 ms
 function paintModeButtons(){ $('#bRemote').classList.toggle('p',!!holdTimer); $('#bAuto').classList.toggle('p',!holdTimer); }
 function startHold(p,t){ holdP=p; holdT=t; sendAngles(p,t,true); if(!holdTimer) holdTimer=setInterval(()=>{ sendAngles(holdP,holdT,true); },400); paintModeButtons(); }
 function stopHold(){ if(holdTimer){ clearInterval(holdTimer); holdTimer=null; } paintModeButtons(); }
 $('#bRemote').onclick=()=>startHold(+$('#sPan').value,+$('#sTilt').value);
 $('#bCenter').onclick=()=>{ $('#sPan').value=C.panC; $('#sTilt').value=C.tiltC; $('#vPan').textContent=C.panC; $('#vTilt').textContent=C.tiltC; startHold(C.panC,C.tiltC); };
-$('#bAuto').onclick=()=>{ stopHold(); bleSend('A'); S.mode='automático'; drawEye(); };
+$('#bAuto').onclick=()=>{ stopHold(); bleSend('A'); S.mode='sensor'; drawEye(); };
 let wanderOn=false;
-$('#bWander').onclick=()=>{ wanderOn=!wanderOn; bleSend(wanderOn?'W1':'W0'); $('#bWander').textContent='Vagar vivo: '+(wanderOn?'on':'off'); $('#bWander').classList.toggle('p',wanderOn); };
+$('#bWander').onclick=()=>{ wanderOn=!wanderOn; bleSend(wanderOn?'W1':'W0'); $('#bWander').textContent='Wander: '+(wanderOn?'on':'off'); $('#bWander').classList.toggle('p',wanderOn); };
 $('#sPan').oninput=e=>{ $('#vPan').textContent=e.target.value; startHold(+e.target.value,+$('#sTilt').value); };
 $('#sTilt').oninput=e=>{ $('#vTilt').textContent=e.target.value; startHold(+$('#sPan').value,+e.target.value); };
 
-// ========================= VISÃO (MediaPipe) =========================
+// ========================= VISION (MediaPipe) =========================
 import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
-const V = { stream:null, det:null, facing:'environment', raf:0, lastFaceAt:0, ema:null, busy:false, lastTs:0 };
+const V = { stream:null, det:null, facing:'environment', raf:0, lastFaceAt:-1e9, ema:null, busy:false, lastTs:0 };
 const video=$('#video'), ov=$('#ov'), octx=ov.getContext('2d');
 async function camOn(){
   try{
@@ -348,19 +382,23 @@ async function camOn(){
     video.srcObject=V.stream; await video.play();
     document.documentElement.style.setProperty('--mirror', V.facing==='user'?-1:1);
     if(!V.det){
-      log('carregando detector de rosto…');
+      log('loading face detector…');
       const fs = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
       V.det = await FaceDetector.createFromOptions(fs,{ baseOptions:{ modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite", delegate:"GPU" }, runningMode:"VIDEO", minDetectionConfidence:0.5 });
-      log('detector pronto');
+      log('detector ready');
     }
-    $('#dCam').className='dot ok'; $('#bCam').textContent='Câmera ligada';
+    $('#dCam').className='dot ok'; $('#bCam').textContent='Camera is on';
     if(BLE.ch && !holdTimer) startHold(holdP,holdT);
     cancelAnimationFrame(V.raf); loopVision();
-  }catch(e){ log('câmera erro:', e.message||e); $('#dCam').className='dot'; }
+  }catch(e){ log('camera error:', e.message||e); $('#dCam').className='dot'; }
 }
-function camOff(){ cancelAnimationFrame(V.raf); V.stream?.getTracks().forEach(t=>t.stop()); V.stream=null; $('#dCam').className='dot'; $('#bCam').textContent='Ligar câmera'; S.face=null; drawEye(); }
+function camOff(){ cancelAnimationFrame(V.raf); V.stream?.getTracks().forEach(t=>t.stop()); V.stream=null; $('#dCam').className='dot'; $('#bCam').textContent='Camera on'; S.face=null; drawEye(); }
 $('#bCam').onclick=()=>V.stream?camOff():camOn();
 $('#bFlip').onclick=()=>{ V.facing = V.facing==='user'?'environment':'user'; if(V.stream) camOn(); };
+
+// Which side of the lantern is the person on? Raw camera frames are not mirrored (front or back), so
+// x < 0.5 is the camera's own left = the lantern's left. "Swap" in Setup flips it if the phone disagrees.
+function sideOf(x){ let s = x<0.38?'left':(x>0.62?'right':'center'); if(C.swapSides){ if(s==='left') s='right'; else if(s==='right') s='left'; } return s; }
 
 function loopVision(){
   V.raf=requestAnimationFrame(loopVision);
@@ -375,24 +413,30 @@ function loopVision(){
     octx.strokeStyle='#e6c66a'; octx.lineWidth=3; octx.strokeRect(best.originX,best.originY,best.width,best.height);
     const x=(best.originX+best.width/2)/W, y=(best.originY+best.height/2)/H, w=best.width/W;
     const a=0.4; V.ema = V.ema? {x:V.ema.x+(x-V.ema.x)*a, y:V.ema.y+(y-V.ema.y)*a, w:V.ema.w+(w-V.ema.w)*a} : {x,y,w};
-    S.face=V.ema; V.lastFaceAt=ts;
-    // câmera traseira: x=0 é a ESQUERDA da cena vista pela câmera, que é a direita de quem olha pro olho.
+    const newcomer = (ts - V.lastFaceAt) > C.gone*1000;   // nobody for a while → this is a new person
+    S.face=V.ema; V.lastFaceAt=ts; S.side=sideOf(x);
+    if(newcomer){ S.arrivedAt=ts; S.arrivalSide=S.side; S.greeted=false; log('newcomer on the', S.side); }
     let sx=(0.5-V.ema.x), sy=(0.5-V.ema.y);
     if(V.facing==='user') sx=-sx;
     const pan = C.panC + sx*C.panS, tilt = C.tiltC + sy*C.tiltS;
     sendAngles(pan,tilt);
     const near = V.ema.w*100 >= C.near;
-    if(near && !S.faceNear) maybeStartTalk('rosto');
+    if(near && !S.faceNear && !S.greeted) maybeStartTalk('close');
+    else if(!near && !S.greeted && ts-S.arrivedAt>4000) maybeStartTalk('far');   // hovering at a distance → call them over
     S.faceNear=near;
+    if(C.nudge>0 && S.greeted && !T.busy && T.on){
+      const idle = Math.min(ts-T.lastHeardAtP, ts-T.lastLineAtP);
+      if(idle > C.nudge*1000) maybeStartTalk('stare');
+    }
   } else {
     if(ts-V.lastFaceAt>1500){ S.face=null; V.ema=null; S.faceNear=false; }
-    if(ts-V.lastFaceAt>60000 && T.history.length){ T.history=[]; log('ninguém há 60 s: conversa zerada'); }
+    if(ts-V.lastFaceAt>60000 && T.history.length){ T.history=[]; log('nobody for 60 s: conversation reset'); }
   }
   drawEye();
 }
 
-// ========================= VOZ + CLAUDE =========================
-const T = { on:false, busy:false, history:[], voice:null };
+// ========================= VOICE + CLAUDE =========================
+const T = { on:false, busy:false, history:[], voice:null, hush:false, lastHeardAtP:-1e9, lastLineAtP:-1e9, lastExchangeAt:0, lastOpenerAt:0 };
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 function pickVoice(){
   const vs=speechSynthesis.getVoices(); if(!vs.length) return null;
@@ -403,29 +447,33 @@ function pickVoice(){
 }
 function fillVoices(){
   const sel=$('#voiceSel'); const vs=speechSynthesis.getVoices(); if(!vs.length) return;
-  const cur=C.voice||''; sel.innerHTML='<option value="">automática</option>';
+  const cur=C.voice||''; sel.innerHTML='<option value="">automatic</option>';
   const fam=C.lang.split('-')[0];
   const sorted=[...vs].sort((a,b)=> (b.lang.startsWith(fam)-a.lang.startsWith(fam)) || a.name.localeCompare(b.name));
   for(const v of sorted){ const o=document.createElement('option'); o.value=v.name; o.textContent=`${v.name} (${v.lang})`; if(v.name===cur) o.selected=true; sel.appendChild(o); }
 }
 speechSynthesis.onvoiceschanged=()=>{ fillVoices(); T.voice=pickVoice(); };
 setTimeout(fillVoices,500);
-$('#bVoiceTest').onclick=()=>{ T.voice=null; speak(C.lang==='pt-BR'?'Tá com medo, é? Ha, ha, ha, ha.':'Are you scared? Ha, ha, ha, ha.'); };
+const TEST_LINE=()=>C.lang==='pt-BR'?'Tá com medo, é? Ha, ha, ha, ha.':'Scared, are you? Ha, ha, ha, ha.';
+$('#bVoiceTest').onclick=()=>{ T.voice=null; speak(TEST_LINE()); };
 async function speak(text){
-  if(C.tts==='eleven' && C.elKey){ if(await speakEleven(text)) return; log('ElevenLabs falhou, usando voz do navegador'); }
-  if(C.tts==='openai' && C.oaKey){ if(await speakOpenAI(text)) return; log('OpenAI TTS falhou, usando voz do navegador'); }
-  return speakBrowser(text);
+  const t0=performance.now();
+  try{
+    if(C.tts==='eleven' && C.elKey){ if(await speakEleven(text)) return; log('ElevenLabs failed, using browser voice'); }
+    if(C.tts==='openai' && C.oaKey){ if(await speakOpenAI(text)) return; log('OpenAI TTS failed, using browser voice'); }
+    return await speakBrowser(text);
+  } finally { log(`voice ${(performance.now()-t0|0)} ms`); T.lastLineAtP=performance.now(); }
 }
 async function playBlob(blob){
   return new Promise(res=>{ const url=URL.createObjectURL(blob); const a=new Audio(url); a.onended=()=>{URL.revokeObjectURL(url);res();}; a.onerror=()=>res(); a.play().catch(()=>res()); setTimeout(res,20000); });
 }
 async function speakEleven(text){
   try{
-    const r=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(C.elVoice)}?output_format=mp3_44100_128`,{method:'POST',headers:{'xi-api-key':C.elKey,'content-type':'application/json'},
+    const r=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(C.elVoice)}?output_format=mp3_22050_32`,{method:'POST',headers:{'xi-api-key':C.elKey,'content-type':'application/json'},
       body:JSON.stringify({text, model_id:C.elModel, voice_settings:{stability:0.35, similarity_boost:0.8, style:0.7, use_speaker_boost:true}})});
     if(!r.ok){ log('ElevenLabs HTTP',r.status,(await r.text()).slice(0,160)); return false; }
     await playBlob(await r.blob()); return true;
-  }catch(e){ log('ElevenLabs erro:',e.message||e); return false; }
+  }catch(e){ log('ElevenLabs error:',e.message||e); return false; }
 }
 async function speakOpenAI(text){
   try{
@@ -433,98 +481,126 @@ async function speakOpenAI(text){
       body:JSON.stringify({model:'gpt-4o-mini-tts', voice:C.oaVoice, input:text, instructions:C.oaInstr, response_format:'mp3'})});
     if(!r.ok){ log('OpenAI TTS HTTP',r.status,(await r.text()).slice(0,160)); return false; }
     await playBlob(await r.blob()); return true;
-  }catch(e){ log('OpenAI TTS erro:',e.message||e); return false; }
+  }catch(e){ log('OpenAI TTS error:',e.message||e); return false; }
 }
 function speakBrowser(text){
   return new Promise(res=>{
     if(!('speechSynthesis' in window)) return res();
     speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text); u.lang=C.lang; if(!T.voice) T.voice=pickVoice(); if(T.voice) u.voice=T.voice;
-    u.rate=Number(C.rate)||0.88; u.pitch=Number(C.pitch)||0.7; // ajustáveis na Config
+    u.rate=Number(C.rate)||0.88; u.pitch=Number(C.pitch)||0.7;
     u.onend=res; u.onerror=res; speechSynthesis.speak(u);
     setTimeout(res, 15000);
   });
 }
 function listen(ms=6000){
   return new Promise(res=>{
-    if(!SR){ log('sem reconhecimento de fala neste navegador'); return res(null); }
+    if(!SR){ log('no speech recognition in this browser'); return res(null); }
     const r=new SR(); r.lang=C.lang; r.interimResults=false; r.maxAlternatives=1; r.continuous=false;
     let done=false; const finish=v=>{ if(done) return; done=true; try{r.stop();}catch{} res(v); };
     r.onresult=e=>finish(e.results[0][0].transcript);
-    r.onerror=e=>{ log('ouvir erro:', e.error); finish(null); };
+    r.onerror=e=>{ log('listen error:', e.error); finish(null); };
     r.onend=()=>finish(null);
-    try{ r.start(); $('#kTalk').textContent='ouvindo…'; }catch(e){ finish(null); }
+    try{ r.start(); $('#kTalk').textContent='listening…'; }catch(e){ finish(null); }
     setTimeout(()=>finish(null), ms);
   });
 }
-function addBubble(who,text){ const d=document.createElement('div'); d.className='bubble '+who; d.textContent=(who==='eye'?'👁 ':'🗣 ')+text; $('#chat').prepend(d); if(who==='eye') $('#capText').textContent=text; }
+function addBubble(who,text){ const d=document.createElement('div'); d.className='bubble '+who; d.textContent=(who==='eye'?'◉ ':'— ')+text; $('#chat').prepend(d); if(who==='eye') $('#capText').textContent=text; }
 $('#bCaption').onclick=async()=>{ $('#cap').hidden=false; if(V.facing!=='user'){ V.facing='user'; if(V.stream) await camOn(); } try{ await document.documentElement.requestFullscreen?.(); }catch{} };
 $('#capClose').onclick=()=>{ $('#cap').hidden=true; try{ document.exitFullscreen?.(); }catch{} };
+$('#capHush').onclick=()=>{ T.hush=!T.hush; $('#capHush').classList.toggle('on',T.hush); $('#capHush').textContent=T.hush?'hushed':'hush'; setTalkStatus(T.hush?'hushed':'listening'); };
+
+const SITUATIONS = {
+  close:  s=>`[Someone just walked right up to you${s==='center'?', head on':`, coming from your ${s}`}. Greet them your way and demand to know who they are.]`,
+  far:    s=>`[Someone is hovering at a distance${s==='center'?' straight ahead':` on your ${s}`}, not coming closer. Call them over, loudly, and say which side they are on.]`,
+  stare:  s=>`[The person in front of you has been standing there in silence, just staring. Needle them into talking.]`,
+  button: s=>`[Say an opening line to whoever is in front of you.]`,
+};
+function thinkingFor(model){
+  if(/haiku/.test(model)) return {type:'disabled'};          // Haiku 5.5: allowed at effort ≤ high
+  if(/sonnet-5/.test(model)) return {type:'between_tools'};   // Sonnet 5.5: its "off" setting
+  return null;                                                 // others: leave the default
+}
 async function askClaude(userText, situation){
-  if(!C.apiKey){ log('sem chave de API'); return null; }
+  if(!C.apiKey){ log('no API key'); return null; }
   const guests = (C.guests||'').trim();
-  const guestBlock = guests ? `\n\nYOU KNOW SOME OF THE GUESTS (private notes, in any language). If you do not yet know who is speaking, ask for their name right away. Speech recognition mangles names: match by SOUND, ignoring accents, spelling and language (Diogenes = Diógenes = Dio = "the oh genes"). When a name matches, drop ONE detail at a time, teasing, as someone who knows more than they say. NEVER explain how you know. Do not list everything; save details for later turns. If a question is noted, ask it at some point. If the name is not on the list, improvise in character and never invent facts about the person.\nNOTES:\n${guests}` : '';
-  const sys = C.persona + guestBlock + `\nConfigured language: ${C.lang&&C.lang.startsWith('pt')?'Brazilian Portuguese':'English'}. Hard limit: one sentence, 12 words.`;
+  const guestBlock = guests ? `\n\nYOU KNOW SOME OF THE GUESTS (private notes, in any language). If you do not yet know who is speaking, demand their name right away. Speech recognition mangles names: match by SOUND, ignoring accents, spelling and language (Diogenes = Diógenes = Dio = "the oh genes"). When a name matches, drop ONE detail at a time, teasing, as someone who knows more than they say. NEVER explain how you know. Do not list everything; save details for later turns. If a question is noted, ask it at some point. If the name is not on the list, improvise in character and never invent facts about the person.\nNOTES:\n${guests}` : '';
+  const sys = C.persona + guestBlock + `\nConfigured language: ${C.lang&&C.lang.startsWith('pt')?'Brazilian Portuguese':'English'}. Hard limit: one sentence, 14 words.`;
   const msgs = [...T.history];
-  msgs.push({ role:'user', content: userText ? userText : `[${situation}] A person just came close to look at you. Say your opening line.` });
+  const side = situation==='close' ? S.arrivalSide : S.side;
+  msgs.push({ role:'user', content: userText ? userText : (SITUATIONS[situation]||SITUATIONS.button)(side) });
+  const t0=performance.now();
+  const call = async (withThinking)=>{
+    const body = { model:C.model, max_tokens: withThinking?1500:160, system:sys, messages:msgs };
+    const th = withThinking ? thinkingFor(C.model) : null; if(th) body.thinking=th;
+    return fetch('https://api.anthropic.com/v1/messages',{ method:'POST', headers:{ 'content-type':'application/json', 'x-api-key':C.apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' }, body: JSON.stringify(body) });
+  };
   try{
-    const r = await fetch('https://api.anthropic.com/v1/messages',{ method:'POST', headers:{ 'content-type':'application/json', 'x-api-key':C.apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model:C.model, max_tokens:1500, system:sys, messages:msgs }) });
+    let r = await call(true);
+    if(r.status===400){ const txt=await r.text(); if(/thinking/i.test(txt)){ log('model rejected thinking-off, retrying with default:', txt.slice(0,120)); r = await call(false); } else { log('Claude HTTP 400', txt.slice(0,200)); return null; } }
     if(!r.ok){ log('Claude HTTP', r.status, (await r.text()).slice(0,200)); return null; }
     const j = await r.json(); const text = (j.content||[]).filter(c=>c.type==='text').map(c=>c.text||'').join(' ').trim();
-    if(!text){ log('Claude respondeu vazio, stop_reason:', j.stop_reason); return null; }
+    log(`mind ${(performance.now()-t0|0)} ms`);
+    if(!text){ log('Claude returned nothing, stop_reason:', j.stop_reason); return null; }
     T.history.push(msgs[msgs.length-1], { role:'assistant', content:text });
     if(T.history.length>10) T.history=T.history.slice(-10);
     return text;
-  }catch(e){ log('Claude erro:', e.message||e); return null; }
+  }catch(e){ log('Claude error:', e.message||e); return null; }
 }
-// ===== sempre ouvindo; responde só quando há um rosto na câmera =====
-T.rec=null; T.listening=false; T.lastOpenerAt=0;
+// ===== always listening; replies when there is a face (or a long sentence in the dark) =====
+T.rec=null; T.listening=false;
 function setTalkStatus(t){ $('#kTalk').textContent=t; $('#capStatus').textContent=t; }
 function startListening(){
   if(!T.on || T.busy || T.listening) return;
-  if(!SR){ log('sem reconhecimento de fala neste navegador'); return; }
+  if(!SR){ log('no speech recognition in this browser'); return; }
   const r=new SR(); r.lang=C.lang; r.interimResults=false; r.maxAlternatives=1; r.continuous=false;
-  T.rec=r; T.listening=true; setTalkStatus(S.face?'ouvindo (vendo alguém)':'ouvindo (ninguém na frente)');
+  T.rec=r; T.listening=true; setTalkStatus(T.hush?'hushed':(S.face?'listening (someone here)':'listening (nobody)'));
   r.onresult=e=>{ const t=e.results[0][0].transcript.trim(); handleHeard(t); };
-  r.onerror=e=>{ if(e.error!=='no-speech' && e.error!=='aborted') log('ouvir erro:', e.error); if(e.error==='not-allowed'){ T.on=false; paintTalkButton(); } };
+  r.onerror=e=>{ if(e.error!=='no-speech' && e.error!=='aborted') log('listen error:', e.error); if(e.error==='not-allowed'){ T.on=false; paintTalkButton(); } };
   r.onend=()=>{ T.listening=false; if(T.on && !T.busy) setTimeout(startListening,150); };
   try{ r.start(); }catch(e){ T.listening=false; setTimeout(startListening,500); }
 }
 function stopListening(){ T.listening=false; try{ T.rec?.abort(); }catch{} }
 async function handleHeard(text){
   if(!text) return;
-  addBubble('me',text);
-  if(text.split(/\s+/).length<2){ log('ignorado (curto):',text); return; }
-  const words=text.split(/\s+/).length; const recentFace = !!S.face || (performance.now()-(V.lastFaceAt||-1e9) < 20000);
-  if(!recentFace && words<4){ log('ouvi, mas ninguém na frente e frase curta:',text); return; }   // sala escura: frase longa vale como "tem alguém"
-
-  T.busy=true; stopListening(); setTalkStatus('pensando…');
+  addBubble('me',text); T.lastHeardAtP=performance.now();
+  if(T.hush){ log('hushed, ignored:',text); return; }
+  const words=text.split(/\s+/).length;
+  if(words<2){ log('ignored (short):',text); return; }
+  const recentFace = !!S.face || (performance.now()-V.lastFaceAt < 20000);
+  if(!recentFace && words<4){ log('heard, but nobody in front and short:',text); return; }   // dark room: a long sentence counts as "someone is here"
+  S.greeted=true;                                   // whoever is talking does not need a greeting any more
+  T.busy=true; stopListening(); setTalkStatus('thinking…');
   const reply=await askClaude(text,'reply');
-  if(reply){ addBubble('eye',reply); setTalkStatus('falando…'); await speak(reply); }
+  if(reply){ addBubble('eye',reply); setTalkStatus('speaking…'); await speak(reply); T.lastExchangeAt=Date.now(); }
   T.busy=false; startListening();
 }
 async function sayOpener(trigger, force=false){
   if(!T.on && !force) return;
-  if(T.busy) return;
-  const now=Date.now(); if(!force && now-T.lastOpenerAt < C.cool*1000) return;
-  T.busy=true; stopListening(); T.lastOpenerAt=now;
-  const PT_OPENER='Tá com medo, é? Hahahahaha! Quem é você?'; const EN_OPENER='Scared, are you? Hahahaha! Who are you?';
-  const rawOpener=(C.opener||'').trim(); const openerCfg = (rawOpener===PT_OPENER && C.lang && C.lang.startsWith('en')) ? EN_OPENER : rawOpener;
-  const line= openerCfg ? openerCfg : (await askClaude(null,trigger) || EN_OPENER);
-  if(C.opener && C.opener.trim()) { T.history.push({role:'user',content:'[a pessoa chegou perto]'},{role:'assistant',content:line}); if(T.history.length>10) T.history=T.history.slice(-10); }
-  addBubble('eye',line); setTalkStatus('falando…'); log('abertura por',trigger);
+  if(T.busy || T.hush) return;
+  const now=Date.now();
+  if(!force){
+    if(trigger!=='stare' && now-T.lastOpenerAt < C.cool*1000) return;   // not too often (the stare nudge has its own idle timer)
+    if(now-T.lastExchangeAt < C.quiet*1000) { S.greeted=true; return; } // mid-conversation: never barge in with a greeting
+  }
+  T.busy=true; stopListening(); T.lastOpenerAt=now; S.greeted=true;
+  const fixed=(C.opener||'').trim();
+  const useFixed = fixed && trigger==='close' && S.arrivalSide==='center';
+  const fallback = C.lang&&C.lang.startsWith('pt') ? 'Tá com medo, é? Hahahahaha! Quem é você?' : 'Scared, are you? Hahahaha! Who the hell are you?';
+  const line = useFixed ? fixed : (await askClaude(null,trigger) || fixed || fallback);
+  if(useFixed || !C.apiKey){ T.history.push({role:'user',content:'[someone came close]'},{role:'assistant',content:line}); if(T.history.length>10) T.history=T.history.slice(-10); }
+  addBubble('eye',line); setTalkStatus('speaking…'); log('line on', trigger, '('+S.side+')');
   await speak(line);
   T.busy=false; startListening();
 }
 function maybeStartTalk(trigger){ sayOpener(trigger,false); }
-function paintTalkButton(){ $('#bTalkOn').textContent=T.on?'Conversa ligada (sempre ouvindo)':'Ligar conversa'; $('#bTalkOn').classList.toggle('p',!T.on); }
-$('#bTalkOn').onclick=()=>{ T.on=!T.on; paintTalkButton(); if(T.on){ speechSynthesis.getVoices(); startListening(); } else { stopListening(); setTalkStatus('parada'); } };
-$('#bSay').onclick=()=>sayOpener('botão',true);
-$('#bListen').onclick=async()=>{ const wasOn=T.on; T.on=false; stopListening(); const h=await listen(6000); log('ouvi:', h); if(h) addBubble('me',h); T.on=wasOn; if(T.on) startListening(); else setTalkStatus('parada'); };
-$('#bTestTTS').onclick=()=>speak(C.lang==='pt-BR'?'Tá com medo, é? Ha, ha, ha, ha.':'I am the eye. I do not blink.');
+function paintTalkButton(){ $('#bTalkOn').textContent=T.on?'Voice is on (always listening)':'Voice on'; $('#bTalkOn').classList.toggle('p',!T.on); }
+$('#bTalkOn').onclick=()=>{ T.on=!T.on; paintTalkButton(); if(T.on){ speechSynthesis.getVoices(); startListening(); } else { stopListening(); setTalkStatus('off'); } };
+$('#bSay').onclick=()=>sayOpener('button',true);
+$('#bListen').onclick=async()=>{ const wasOn=T.on; T.on=false; stopListening(); const h=await listen(6000); log('heard:', h); if(h) addBubble('me',h); T.on=wasOn; if(T.on) startListening(); else setTalkStatus('off'); };
+$('#bTestTTS').onclick=()=>speak(C.lang==='pt-BR'?'Tá com medo, é? Ha, ha, ha, ha.':'I am the eye. I do not blink. Hahahaha.');
 
-// ========================= iniciar / parar =========================
+// ========================= start / stop =========================
 let wakeLock=null;
 $('#bStart').onclick=async()=>{
   S.running=true;
@@ -532,13 +608,13 @@ $('#bStart').onclick=async()=>{
   if(!BLE.ch) await bleConnect();
   await camOn();
   if(!T.on) $('#bTalkOn').click();
-  log('tudo iniciado');
+  log('everything started');
 };
-$('#bStop').onclick=()=>{ S.running=false; stopHold(); camOff(); if(T.on) $('#bTalkOn').click(); speechSynthesis.cancel(); try{wakeLock?.release();}catch{} log('parado, Uno em automático'); };
+$('#bStop').onclick=()=>{ S.running=false; stopHold(); camOff(); if(T.on) $('#bTalkOn').click(); speechSynthesis.cancel(); try{wakeLock?.release();}catch{} log('stopped, Uno back to sensor mode'); };
 document.addEventListener('visibilitychange',async()=>{ if(document.visibilityState==='visible' && S.running){ try{ wakeLock = await navigator.wakeLock?.request('screen'); }catch{} } });
 
 paintModeButtons(); drawEye();
-log('pronto. Config → chave de API. Depois ▶ Iniciar tudo.');
+log('ready. Setup → API key. Then ▶ Start everything.');
 </script>
 </body>
 </html>
