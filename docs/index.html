@@ -78,7 +78,7 @@
 </head>
 <body>
 <header>
-  <h1>EYEGO <span class="ver">v31</span><small>VIDEO · ERGO · SUM</small></h1>
+  <h1>EYEGO <span class="ver">v32</span><small>VIDEO · ERGO · SUM</small></h1>
   <div class="status">
     <span><i class="dot" id="dBle"></i>BLE</span>
     <span><i class="dot" id="dCam"></i>EYE</span>
@@ -183,7 +183,7 @@
 Beatriz (Bia): hosting the party. Ask: who the worst guest has been so far."></textarea>
     <label>Personality (system prompt)</label>
     <textarea id="persona"></textarea>
-    <div class="row" style="margin-top:10px"><button class="b" id="bPersonaReset">Restore default</button><button class="b p" id="bSave">Save</button></div>
+    <div class="row" style="margin-top:10px"><button class="b" id="bGuestsLoad">Load guests from site</button><button class="b" id="bPersonaReset">Restore default</button><button class="b p" id="bSave">Save</button></div>
   </div>
   <div class="card">
     <h2>Voice engine</h2>
@@ -318,6 +318,17 @@ document.querySelectorAll('#config input, #config select, #config textarea').for
 $('#bSave').onclick=saveCfg;
 $('#bPersonaReset').onclick=()=>{ $('#persona').value=DEFAULT_PERSONA; saveCfg(); };
 loadCfg();
+async function loadGuestsFromSite(force){
+  try{
+    const r=await fetch('guests.txt?v='+Date.now(),{cache:'no-store'}); if(!r.ok) return;
+    const txt=(await r.text()).trim(); if(!txt) return;
+    if(force || !(C.guests||'').trim() || C.guestsFromSite){ $('#guests').value=txt; saveCfg(); C.guestsFromSite=true; cfg.set('guestsFromSite',true); log('guest notes loaded from site:', txt.split('\n').length, 'lines'); }
+  }catch(e){ log('guests.txt:', e.message||e); }
+}
+C.guestsFromSite=cfg.get('guestsFromSite',false);
+$('#bGuestsLoad').onclick=()=>loadGuestsFromSite(true);
+loadGuestsFromSite(false);
+$('#guests').addEventListener('input',()=>{ C.guestsFromSite=false; cfg.set('guestsFromSite',false); });
 
 // -------- state
 const S = { mode:'—', pan:90, tilt:90, dl:'—', dr:'—', face:null, faceNear:false, side:'center', arrivedAt:0, arrivalSide:'center', greeted:true, talking:false, running:false, react:true, lastCool:0 };
@@ -600,8 +611,9 @@ function startListening(){
     $('#capHeard').textContent = (finals.join(' ')+' '+interim).trim();
     if(finals.length){ clearTimeout(timer); timer=setTimeout(flush, 1000); }   // wait 1 s of silence: pauses mid-sentence no longer cut it
   };
-  r.onerror=e=>{ if(e.error!=='no-speech' && e.error!=='aborted') log('listen error:', e.error); if(e.error==='not-allowed'){ T.on=false; paintTalkButton(); } };
-  r.onend=()=>{ T.listening=false; if(finals.length) flush(); if(T.on && !T.busy) setTimeout(startListening,150); };
+  let backoff=150;
+  r.onerror=e=>{ if(e.error!=='no-speech' && e.error!=='aborted') log('listen error:', e.error); if(e.error==='network') backoff=1500; if(e.error==='not-allowed'){ T.on=false; paintTalkButton(); } };
+  r.onend=()=>{ T.listening=false; if(finals.length) flush(); if(T.on && !T.busy) setTimeout(startListening,backoff); };
   try{ r.start(); }catch(e){ T.listening=false; setTimeout(startListening,500); }
 }
 function stopListening(){ T.listening=false; try{ T.rec?.abort(); }catch{} }
@@ -611,8 +623,10 @@ async function handleHeard(text){
   if(T.hush){ log('hushed, ignored:',text); return; }
   const words=text.split(/\s+/).length;
   if(words<2){ log('ignored (short):',text); return; }
-  const recentFace = !!S.face || (performance.now()-V.lastFaceAt < 20000);
-  if(!recentFace && words<4){ log('heard, but nobody in front and short:',text); return; }   // dark room: a long sentence counts as "someone is here"
+  const inConversation = Date.now()-T.lastExchangeAt < C.quiet*1000 || Date.now()-T.lastOpenerAt < C.quiet*1000;
+  const recentFace = !!S.face || (performance.now()-V.lastFaceAt < 45000);
+  // people lean into the phone to talk and leave the frame: mid-conversation nobody needs to be on camera
+  if(!inConversation && !recentFace && words<4){ log('heard, but nobody in front and short:',text); return; }
   S.greeted=true;                                   // whoever is talking does not need a greeting any more
   T.busy=true; stopListening(); setTalkStatus('thinking…');
   const reply=await askClaude(text,'reply');
