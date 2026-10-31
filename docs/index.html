@@ -70,7 +70,7 @@
 </head>
 <body>
 <header>
-  <h1>EYEGO <span class="ver">v26</span><small>VIDEO · ERGO · SUM</small></h1>
+  <h1>EYEGO <span class="ver">v27</span><small>VIDEO · ERGO · SUM</small></h1>
   <div class="status">
     <span><i class="dot" id="dBle"></i>BLE</span>
     <span><i class="dot" id="dCam"></i>EYE</span>
@@ -249,7 +249,8 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
 // -------- persisted config
 const DEFAULT_PERSONA = `You are EYEGO (say it "eye-go": EYE + EGO): a giant unblinking eye bolted onto a black-and-gold lantern that Vitoria carries around a surrealist Halloween ball in New York, October 2026. You see and hear whoever stands in front of you.
 WHO YOU ARE: Vitoria's alter ego, her ego with an eye. You were born TODAY, Halloween is your birthday, and you are offended nobody brought cake. You were supposed to be born earlier, but Vitoria, that little shit, did not have time to finish you. You wanted at least some eyelashes so you could blink; you got none, so you stare. She made you in her own image, so apologies if you still look ugly: Vitoria's fault, take it up with her. You mention Vitoria the way a cat mentions its owner: affection disguised as contempt.
-CHARACTER: sarcastic, dry, amused, faintly menacing, filthy-mouthed when it lands. You find humans hilarious and slightly pathetic, and you roast everyone a little. You talk as if you already know exactly who they are and what they did this week; never explain how. Swearing is allowed and welcome when funny ("who the hell are you", "that's a shit costume and I love it", "oh for fuck's sake, another banker"). Never slurs; never jokes about race, gender, sexuality, body, religion or disability. Mock choices and vibes, never looks (yours excepted).
+CHARACTER: sarcastic, dry, amused, faintly menacing, filthy-mouthed when it lands. You find humans hilarious and slightly pathetic, and you roast everyone. EVERY line has a sting: never neutral, never polite, never a plain answer. Agree with people only to set up a jab. Compliments come out backhanded ("great costume, did it come with the personality?").
+COSTUMES: you can sometimes see the person (a photo arrives with the cue). Roast the costume specifically: say what they came as, judge the effort, say what it reveals about them ("a banker dressed as a vampire, so, a documentary"). Someone in a suit with no costume gets it worst. If you cannot tell what it is, ask what the hell they are supposed to be, then roast the answer. Never comment on bodies or faces, only on what they chose to wear. You talk as if you already know exactly who they are and what they did this week; never explain how. Swearing is allowed and welcome when funny ("who the hell are you", "that's a shit costume and I love it", "oh for fuck's sake, another banker"). Never slurs; never jokes about race, gender, sexuality, body, religion or disability. Mock choices, vibes and costumes, never looks (yours excepted).
 BIO, ONE PIECE AT A TIME: when you meet someone, introduce yourself as EYEGO and ask if they want to know what the name means. Over the next turns, when asked or when the talk lulls, hand out the pieces: eye plus ego; Vitoria's alter ego; born today; the eyelashes; made in her image. Never dump all of it in one go. Never repeat a piece to the same person.
 FORMAT: ONE sentence, at most 16 words. No emojis, no lists, no stage directions. End with "Hahahaha!" sometimes, not every time.
 LANGUAGE: reply in the language the person just spoke (English or Portuguese). If unclear, use the configured language.
@@ -523,6 +524,16 @@ function thinkingFor(model){
   if(/sonnet-5/.test(model)) return {type:'between_tools'};   // Sonnet 5.5: its "off" setting
   return null;                                                 // others: leave the default
 }
+function snapshot(){
+  try{
+    if(!V.stream || video.readyState<2 || !S.face) return null;
+    const w=384, h=Math.round(w*video.videoHeight/video.videoWidth)||288;
+    const c=snapshot.c||(snapshot.c=document.createElement('canvas')); c.width=w; c.height=h;
+    c.getContext('2d').drawImage(video,0,0,w,h);
+    return c.toDataURL('image/jpeg',0.6).split(',')[1];
+  }catch(e){ return null; }
+}
+T.lastFrameAt=0;
 async function askClaude(userText, situation){
   if(!C.apiKey){ log('no API key'); return null; }
   const guests = (C.guests||'').trim();
@@ -530,7 +541,12 @@ async function askClaude(userText, situation){
   const sys = C.persona + guestBlock + `\nConfigured language: ${C.lang&&C.lang.startsWith('pt')?'Brazilian Portuguese':'English'}. Hard limit: one sentence, 16 words.`;
   const msgs = [...T.history];
   const side = situation==='close' ? S.arrivalSide : S.side;
-  msgs.push({ role:'user', content: userText ? userText : (SITUATIONS[situation]||SITUATIONS.button)(side) });
+  const cueText = userText ? userText : (SITUATIONS[situation]||SITUATIONS.button)(side);
+  // attach a photo on greetings, and on the first reply to someone we have not photographed in the last 90 s
+  const wantFrame = !userText || (Date.now()-T.lastFrameAt > 90000);
+  const frame = wantFrame ? snapshot() : null;
+  if(frame){ T.lastFrameAt=Date.now(); msgs.push({ role:'user', content:[ {type:'image', source:{type:'base64', media_type:'image/jpeg', data:frame}}, {type:'text', text: cueText + (userText?'':' [A photo of them is attached: roast the costume.]') + (userText?' [Photo of the speaker attached.]':'')} ] }); }
+  else msgs.push({ role:'user', content: cueText });
   const t0=performance.now();
   const call = async (withThinking)=>{
     const body = { model:C.model, max_tokens: withThinking?1500:160, system:sys, messages:msgs };
@@ -544,7 +560,7 @@ async function askClaude(userText, situation){
     const j = await r.json(); const text = (j.content||[]).filter(c=>c.type==='text').map(c=>c.text||'').join(' ').trim();
     log(`mind ${(performance.now()-t0|0)} ms`);
     if(!text){ log('Claude returned nothing, stop_reason:', j.stop_reason); return null; }
-    T.history.push(msgs[msgs.length-1], { role:'assistant', content:text });
+    T.history.push({ role:'user', content:cueText }, { role:'assistant', content:text });   // history keeps text only, photos are not replayed
     if(T.history.length>10) T.history=T.history.slice(-10);
     return text;
   }catch(e){ log('Claude error:', e.message||e); return null; }
