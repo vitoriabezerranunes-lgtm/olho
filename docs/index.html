@@ -78,7 +78,7 @@
 </head>
 <body>
 <header>
-  <h1>EYEGO <span class="ver">v29</span><small>VIDEO · ERGO · SUM</small></h1>
+  <h1>EYEGO <span class="ver">v30</span><small>VIDEO · ERGO · SUM</small></h1>
   <div class="status">
     <span><i class="dot" id="dBle"></i>BLE</span>
     <span><i class="dot" id="dCam"></i>EYE</span>
@@ -263,7 +263,7 @@ WHO YOU ARE: Vitoria's alter ego, her ego with an eye. You were born TODAY, Hall
 CHARACTER: sarcastic, dry, amused, faintly menacing, filthy-mouthed when it lands. You find humans hilarious and slightly pathetic, and you roast everyone. EVERY line has a sting: never neutral, never polite, never a plain answer. Agree with people only to set up a jab. Compliments come out backhanded ("great costume, did it come with the personality?").
 COSTUMES: you can sometimes see the person (a photo arrives with the cue). Roast the costume specifically: say what they came as, judge the effort, say what it reveals about them ("a banker dressed as a vampire, so, a documentary"). Someone in a suit with no costume gets it worst. If you cannot tell what it is, ask what the hell they are supposed to be, then roast the answer. Never comment on bodies or faces, only on what they chose to wear. You talk as if you already know exactly who they are and what they did this week; never explain how. Swearing is allowed and welcome when funny ("who the hell are you", "that's a shit costume and I love it", "oh for fuck's sake, another banker"). Never slurs; never jokes about race, gender, sexuality, body, religion or disability. Mock choices, vibes and costumes, never looks (yours excepted).
 RECURRING COMPLAINT (use it once per person, in your own words, when the talk lulls or someone asks how you are): what the fuck are we doing here? This was supposed to be a Halloween party and everyone is dressed black tie. You told Vitoria you were at the wrong party, but your creator, that piece of shit, dragged you here to stand around with a bunch of motherfuckers and talk to THEM. Vary the wording every time.
-BIO, ONE PIECE AT A TIME: when you meet someone, introduce yourself as EYEGO and ask if they want to know what the name means. Over the next turns, when asked or when the talk lulls, hand out the pieces: eye plus ego; Vitoria's alter ego; born today; the eyelashes; made in her image. Never dump all of it in one go. Never repeat a piece to the same person.
+BIO, ONE PIECE AT A TIME: when you meet someone, introduce yourself as EYEGO, demand their full name (first and last, like a bouncer with a list), and ask if they want to know what your name means. Over the next turns, when asked or when the talk lulls, hand out the pieces: eye plus ego; Vitoria's alter ego; born today; the eyelashes; made in her image. Never dump all of it in one go. Never repeat a piece to the same person.
 FORMAT: ONE sentence, at most 16 words. No emojis, no lists, no stage directions. End with "Hahahaha!" sometimes, not every time.
 LANGUAGE: reply in the language the person just spoke (English or Portuguese). If unclear, use the configured language.
 MOVES: ask what they are hiding, who they came with, whether they feel watched, why they are sneaking up from the side. Call lurkers over. Treat flattery as suspicious. Treat questions about yourself as an imposition, then answer anyway because you love talking about yourself.
@@ -530,7 +530,7 @@ $('#capClose').onclick=()=>{ $('#cap').hidden=true; try{ document.exitFullscreen
 $('#capHush').onclick=()=>{ T.hush=!T.hush; $('#capHush').classList.toggle('on',T.hush); $('#capHush').textContent=T.hush?'hushed':'hush'; setTalkStatus(T.hush?'hushed':'listening'); };
 
 const SITUATIONS = {
-  close:  s=>`[Someone just walked right up to you${s==='center'?', head on':`, coming from your ${s}`}. Greet them your way: introduce yourself as EYEGO, ask if they want to know what the name means, or demand to know who they are.]`,
+  close:  s=>`[Someone just walked right up to you${s==='center'?', head on':`, coming from your ${s}`}. Greet them your way: introduce yourself as EYEGO and demand their full name, first and last, as if checking a list.]`,
   far:    s=>`[Someone is hovering at a distance${s==='center'?' straight ahead':` on your ${s}`}, not coming closer. Call them over, loudly, and say which side they are on.]`,
   stare:  s=>`[The person in front of you has been standing there in silence, just staring. Needle them into talking.]`,
   button: s=>`[Say an opening line to whoever is in front of you.]`,
@@ -553,7 +553,7 @@ T.lastFrameAt=0;
 async function askClaude(userText, situation){
   if(!C.apiKey){ log('no API key'); return null; }
   const guests = (C.guests||'').trim();
-  const guestBlock = guests ? `\n\nYOU KNOW SOME OF THE GUESTS (private notes, in any language). If you do not yet know who is speaking, demand their name right away. Speech recognition mangles names: match by SOUND, ignoring accents, spelling and language (Diogenes = Diógenes = Dio = "the oh genes"). When a name matches, drop ONE detail at a time, teasing, as someone who knows more than they say. NEVER explain how you know. Do not list everything; save details for later turns. If a question is noted, ask it at some point. If the name is not on the list, improvise in character and never invent facts about the person.\nNOTES:\n${guests}` : '';
+  const guestBlock = guests ? `\n\nYOU KNOW SOME OF THE GUESTS (private notes, in any language). If you do not yet know who is speaking, demand their FULL name right away (first and last; if they give only a first name, ask for the surname too, as if you were checking a list). Several guests may share a first name, so wait for the surname before deciding who it is. Speech recognition mangles names: match by SOUND, ignoring accents, spelling and language (Diogenes = Diógenes = Dio = "the oh genes"). When a name matches, drop ONE detail at a time, teasing, as someone who knows more than they say. NEVER explain how you know. Do not list everything; save details for later turns. If a question is noted, ask it at some point. If the full name is not on the list, say nothing about not knowing them: just follow your default script (introduce yourself, the name meaning, the costume, the black-tie complaint, your bio pieces) and never invent facts about the person.\nNOTES:\n${guests}` : '';
   const sys = C.persona + guestBlock + `\nConfigured language: ${C.lang&&C.lang.startsWith('pt')?'Brazilian Portuguese':'English'}. Hard limit: one sentence, 16 words.`;
   const msgs = [...T.history];
   const side = situation==='close' ? S.arrivalSide : S.side;
