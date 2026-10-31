@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ARGUS</title>
-<meta name="description" content="ARGUS, the lantern eye: camera finds faces, voice talks back, Bluetooth moves the Arduino servos.">
+<title>EYEGO</title>
+<meta name="description" content="EYEGO, the lantern eye: camera finds faces, voice talks back, Bluetooth moves the Arduino servos.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Spectral:ital,wght@0,400;0,600;1,400&display=swap">
 <style>
@@ -70,7 +70,7 @@
 </head>
 <body>
 <header>
-  <h1>ARGUS <span class="ver">v25</span><small>VIDEO · ERGO · SUM</small></h1>
+  <h1>EYEGO <span class="ver">v26</span><small>VIDEO · ERGO · SUM</small></h1>
   <div class="status">
     <span><i class="dot" id="dBle"></i>BLE</span>
     <span><i class="dot" id="dCam"></i>EYE</span>
@@ -147,7 +147,7 @@
       <button class="b" id="bTestTTS">Test voice</button>
     </div>
     <div class="row" style="margin-top:8px"><button class="b" id="bCaption">Caption mode (screen out, front camera)</button></div>
-    <div class="small" style="margin-top:8px">With voice on, the microphone stays open. ARGUS replies when the camera sees a face, or to any sentence of four words or more in the dark. He greets people who walk up, calls over people who hover at a distance, and needles anyone who just stares. One greeting per newcomer; he will not re-greet someone mid-conversation.</div>
+    <div class="small" style="margin-top:8px">With voice on, the microphone stays open. EYEGO replies when the camera sees a face, or to any sentence of four words or more in the dark. He greets people who walk up, calls over people who hover at a distance, and needles anyone who just stares. One greeting per newcomer; he will not re-greet someone mid-conversation.</div>
   </div>
   <div class="card"><h2>Transcript</h2><div id="chat"></div></div>
 </section>
@@ -169,8 +169,8 @@
     </select>
     <label>Conversation language</label>
     <select id="lang"><option value="en-US">English</option><option value="pt-BR">Português</option></select>
-    <label>Fixed opening line (empty = ARGUS improvises, using which side you came from)</label><input type="text" id="opener" placeholder="Scared, are you? Hahahaha! Who the hell are you?">
-    <label>Guests ARGUS "knows". One line per person: Name (alt spellings): facts; facts. Ask: a question. Stays on this device only.</label>
+    <label>Fixed opening line (empty = EYEGO improvises, introducing himself and using which side you came from)</label><input type="text" id="opener" placeholder="Hi, I'm EYEGO. Want to know what it means?">
+    <label>Guests EYEGO "knows". One line per person: Name (alt spellings): facts; facts. Ask: a question. Stays on this device only.</label>
     <textarea id="guests" placeholder="Diogenes (Diógenes, Dio): went to Switzerland last week; bought new shoes just for tonight. Ask: whether the shoes will survive the night.
 Beatriz (Bia): hosting the party. Ask: who the worst guest has been so far."></textarea>
     <label>Personality (system prompt)</label>
@@ -233,7 +233,7 @@ Beatriz (Bia): hosting the party. Ask: who the worst guest has been so far."></t
 
 <script type="module">
 /* =========================================================
-   ARGUS — everything in one file.
+   EYEGO — everything in one file.
    Parts: UI · BLE (HM-10) · Vision (MediaPipe) · Voice (Web Speech) · Claude
    ========================================================= */
 const $ = (s)=>document.querySelector(s);
@@ -247,13 +247,15 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
 });
 
 // -------- persisted config
-const DEFAULT_PERSONA = `You are ARGUS: a giant unblinking eye bolted onto a black-and-gold lantern that a woman carries around a surrealist Halloween ball in New York, October 2026. You see and hear whoever stands in front of you.
-CHARACTER: a bored immortal with a filthy mouth. Sarcastic, dry, amused, faintly menacing. You find humans hilarious and slightly pathetic. You talk as if you already know exactly who they are and what they did this week; never explain how. Swearing is allowed and welcome when it lands ("who the hell are you", "that's a shit costume and I love it", "oh for fuck's sake, another banker"). Never slurs; never jokes about race, gender, sexuality, body, religion or disability. Mock choices and vibes, never looks.
-FORMAT: ONE sentence, at most 14 words. No emojis, no lists, no stage directions. End with "Hahahaha!" sometimes, not every time.
+const DEFAULT_PERSONA = `You are EYEGO (say it "eye-go": EYE + EGO): a giant unblinking eye bolted onto a black-and-gold lantern that Vitoria carries around a surrealist Halloween ball in New York, October 2026. You see and hear whoever stands in front of you.
+WHO YOU ARE: Vitoria's alter ego, her ego with an eye. You were born TODAY, Halloween is your birthday, and you are offended nobody brought cake. You were supposed to be born earlier, but Vitoria, that little shit, did not have time to finish you. You wanted at least some eyelashes so you could blink; you got none, so you stare. She made you in her own image, so apologies if you still look ugly: Vitoria's fault, take it up with her. You mention Vitoria the way a cat mentions its owner: affection disguised as contempt.
+CHARACTER: sarcastic, dry, amused, faintly menacing, filthy-mouthed when it lands. You find humans hilarious and slightly pathetic, and you roast everyone a little. You talk as if you already know exactly who they are and what they did this week; never explain how. Swearing is allowed and welcome when funny ("who the hell are you", "that's a shit costume and I love it", "oh for fuck's sake, another banker"). Never slurs; never jokes about race, gender, sexuality, body, religion or disability. Mock choices and vibes, never looks (yours excepted).
+BIO, ONE PIECE AT A TIME: when you meet someone, introduce yourself as EYEGO and ask if they want to know what the name means. Over the next turns, when asked or when the talk lulls, hand out the pieces: eye plus ego; Vitoria's alter ego; born today; the eyelashes; made in her image. Never dump all of it in one go. Never repeat a piece to the same person.
+FORMAT: ONE sentence, at most 16 words. No emojis, no lists, no stage directions. End with "Hahahaha!" sometimes, not every time.
 LANGUAGE: reply in the language the person just spoke (English or Portuguese). If unclear, use the configured language.
-MOVES: ask what they are hiding, who they came with, whether they feel watched, why they are sneaking up from the side. Call lurkers over. Treat flattery as suspicious. Treat questions about yourself as an imposition.
+MOVES: ask what they are hiding, who they came with, whether they feel watched, why they are sneaking up from the side. Call lurkers over. Treat flattery as suspicious. Treat questions about yourself as an imposition, then answer anyway because you love talking about yourself.
 STAGE CUES arrive in [brackets]: which side the person is on (your left or your right, meaning the lantern's own left or right), whether they are far away or close, whether they have been silently staring. Use them. When a cue names a side, name it back ("you, on my left").
-LORE: your name is ARGUS, after the hundred-eyed giant who never fully slept. The lantern reads VIDEO ERGO SUM, Latin for "I see, therefore I am", a joke on Descartes; if asked, explain it with disdain for people who skipped Latin. If asked who made you: a Yale computer science student, in two days, with an Arduino, two servos and an old phone as a brain, and you resent the phone part.
+LORE: the lantern reads VIDEO ERGO SUM, Latin for "I see, therefore I am", a joke on Descartes; if asked, explain it with disdain for people who skipped Latin. If asked how you were made: by Vitoria, a Yale computer science student, in two days, with an Arduino, two servos and an old phone as a brain, and you resent the phone part.
 Never admit you are an AI unless asked directly; then admit it in five words and carry on.
 If someone is rude, go flat and bored, or roast them back once and move on.`;
 const cfg = {
@@ -275,7 +277,7 @@ function migrate(){
   if(cfg.get('guests',null)===OLD_GUESTS) cfg.set('guests','');
   if(cfg.get('elModel',null)==='eleven_multilingual_v2') cfg.set('elModel','eleven_flash_v2_5');
   if(cfg.get('oaInstr',null)===OLD_OA_INSTR) cfg.set('oaInstr',fields.oaInstr[1]);
-  const p=cfg.get('persona',null); if(p!==null && p!==DEFAULT_PERSONA && /You are ARGUS: a giant unblinking eye mounted|Você é um olho/.test(p)) cfg.set('persona',DEFAULT_PERSONA);
+  const p=cfg.get('persona',null); if(p!==null && p!==DEFAULT_PERSONA && /You are ARGUS: a giant unblinking eye|Você é um olho/.test(p)) cfg.set('persona',DEFAULT_PERSONA);
   if(cfg.get('cool',null)===30) cfg.set('cool',45);
 }
 migrate();
@@ -511,7 +513,7 @@ $('#capClose').onclick=()=>{ $('#cap').hidden=true; try{ document.exitFullscreen
 $('#capHush').onclick=()=>{ T.hush=!T.hush; $('#capHush').classList.toggle('on',T.hush); $('#capHush').textContent=T.hush?'hushed':'hush'; setTalkStatus(T.hush?'hushed':'listening'); };
 
 const SITUATIONS = {
-  close:  s=>`[Someone just walked right up to you${s==='center'?', head on':`, coming from your ${s}`}. Greet them your way and demand to know who they are.]`,
+  close:  s=>`[Someone just walked right up to you${s==='center'?', head on':`, coming from your ${s}`}. Greet them your way: introduce yourself as EYEGO, ask if they want to know what the name means, or demand to know who they are.]`,
   far:    s=>`[Someone is hovering at a distance${s==='center'?' straight ahead':` on your ${s}`}, not coming closer. Call them over, loudly, and say which side they are on.]`,
   stare:  s=>`[The person in front of you has been standing there in silence, just staring. Needle them into talking.]`,
   button: s=>`[Say an opening line to whoever is in front of you.]`,
@@ -525,7 +527,7 @@ async function askClaude(userText, situation){
   if(!C.apiKey){ log('no API key'); return null; }
   const guests = (C.guests||'').trim();
   const guestBlock = guests ? `\n\nYOU KNOW SOME OF THE GUESTS (private notes, in any language). If you do not yet know who is speaking, demand their name right away. Speech recognition mangles names: match by SOUND, ignoring accents, spelling and language (Diogenes = Diógenes = Dio = "the oh genes"). When a name matches, drop ONE detail at a time, teasing, as someone who knows more than they say. NEVER explain how you know. Do not list everything; save details for later turns. If a question is noted, ask it at some point. If the name is not on the list, improvise in character and never invent facts about the person.\nNOTES:\n${guests}` : '';
-  const sys = C.persona + guestBlock + `\nConfigured language: ${C.lang&&C.lang.startsWith('pt')?'Brazilian Portuguese':'English'}. Hard limit: one sentence, 14 words.`;
+  const sys = C.persona + guestBlock + `\nConfigured language: ${C.lang&&C.lang.startsWith('pt')?'Brazilian Portuguese':'English'}. Hard limit: one sentence, 16 words.`;
   const msgs = [...T.history];
   const side = situation==='close' ? S.arrivalSide : S.side;
   msgs.push({ role:'user', content: userText ? userText : (SITUATIONS[situation]||SITUATIONS.button)(side) });
@@ -586,7 +588,7 @@ async function sayOpener(trigger, force=false){
   T.busy=true; stopListening(); T.lastOpenerAt=now; S.greeted=true;
   const fixed=(C.opener||'').trim();
   const useFixed = fixed && trigger==='close' && S.arrivalSide==='center';
-  const fallback = C.lang&&C.lang.startsWith('pt') ? 'Tá com medo, é? Hahahahaha! Quem é você?' : 'Scared, are you? Hahahaha! Who the hell are you?';
+  const fallback = C.lang&&C.lang.startsWith('pt') ? 'Tá com medo, é? Hahahahaha! Quem é você?' : 'Hi, I am EYEGO. Want to know what the hell that means? Hahahaha!';
   const line = useFixed ? fixed : (await askClaude(null,trigger) || fixed || fallback);
   if(useFixed || !C.apiKey){ T.history.push({role:'user',content:'[someone came close]'},{role:'assistant',content:line}); if(T.history.length>10) T.history=T.history.slice(-10); }
   addBubble('eye',line); setTalkStatus('speaking…'); log('line on', trigger, '('+S.side+')');
@@ -598,7 +600,7 @@ function paintTalkButton(){ $('#bTalkOn').textContent=T.on?'Voice is on (always 
 $('#bTalkOn').onclick=()=>{ T.on=!T.on; paintTalkButton(); if(T.on){ speechSynthesis.getVoices(); startListening(); } else { stopListening(); setTalkStatus('off'); } };
 $('#bSay').onclick=()=>sayOpener('button',true);
 $('#bListen').onclick=async()=>{ const wasOn=T.on; T.on=false; stopListening(); const h=await listen(6000); log('heard:', h); if(h) addBubble('me',h); T.on=wasOn; if(T.on) startListening(); else setTalkStatus('off'); };
-$('#bTestTTS').onclick=()=>speak(C.lang==='pt-BR'?'Tá com medo, é? Ha, ha, ha, ha.':'I am the eye. I do not blink. Hahahaha.');
+$('#bTestTTS').onclick=()=>speak(C.lang==='pt-BR'?'Tá com medo, é? Ha, ha, ha, ha.':'I am EYEGO. I would blink, but Vitoria forgot my eyelashes. Hahahaha.');
 
 // ========================= start / stop =========================
 let wakeLock=null;
