@@ -78,7 +78,7 @@
 </head>
 <body>
 <header>
-  <h1>EYEGO <span class="ver">v28</span><small>VIDEO · ERGO · SUM</small></h1>
+  <h1>EYEGO <span class="ver">v29</span><small>VIDEO · ERGO · SUM</small></h1>
   <div class="status">
     <span><i class="dot" id="dBle"></i>BLE</span>
     <span><i class="dot" id="dCam"></i>EYE</span>
@@ -598,7 +598,7 @@ function startListening(){
     let interim='';
     for(let i=e.resultIndex;i<e.results.length;i++){ const res=e.results[i]; if(res.isFinal) finals.push(res[0].transcript.trim()); else interim+=res[0].transcript; }
     $('#capHeard').textContent = (finals.join(' ')+' '+interim).trim();
-    if(finals.length){ clearTimeout(timer); timer=setTimeout(flush, 900); }   // wait 0.9 s of silence: pauses mid-sentence no longer cut it
+    if(finals.length){ clearTimeout(timer); timer=setTimeout(flush, 1000); }   // wait 1 s of silence: pauses mid-sentence no longer cut it
   };
   r.onerror=e=>{ if(e.error!=='no-speech' && e.error!=='aborted') log('listen error:', e.error); if(e.error==='not-allowed'){ T.on=false; paintTalkButton(); } };
   r.onend=()=>{ T.listening=false; if(finals.length) flush(); if(T.on && !T.busy) setTimeout(startListening,150); };
