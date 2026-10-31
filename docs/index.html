@@ -57,7 +57,7 @@
 </head>
 <body>
 <header>
-  <h1>Olho Cérebro <span class="small">v23</span></h1>
+  <h1>Olho Cérebro <span class="small">v24</span></h1>
   <span class="pill" id="pBle"><span class="dot" id="dBle"></span> BLE</span>
   <span class="pill" id="pCam"><span class="dot" id="dCam"></span> câmera</span>
   <span class="pill" id="pApi"><span class="dot" id="dApi"></span> API</span>
@@ -496,7 +496,9 @@ async function handleHeard(text){
   if(!text) return;
   addBubble('me',text);
   if(text.split(/\s+/).length<2){ log('ignorado (curto):',text); return; }
-  if(!S.face){ log('ouvi, mas ninguém na frente:',text); return; }
+  const words=text.split(/\s+/).length; const recentFace = !!S.face || (performance.now()-(V.lastFaceAt||-1e9) < 20000);
+  if(!recentFace && words<4){ log('ouvi, mas ninguém na frente e frase curta:',text); return; }   // sala escura: frase longa vale como "tem alguém"
+
   T.busy=true; stopListening(); setTalkStatus('pensando…');
   const reply=await askClaude(text,'reply');
   if(reply){ addBubble('eye',reply); setTalkStatus('falando…'); await speak(reply); }
